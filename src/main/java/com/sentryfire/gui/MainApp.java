@@ -70,7 +70,7 @@ public class MainApp {
 	public void logMessage(String message)
 	{
 	   textAreaLogger.append(message);
-//		textAreaLogger.append(message + "\n");
+	   textAreaLogger.setCaretPosition(textAreaLogger.getDocument().getLength());
 	}
 
 	/**
@@ -389,4 +389,3 @@ public class MainApp {
 		scrollPaneLogs.setViewportView(textAreaLogger);
 	}
 }
-

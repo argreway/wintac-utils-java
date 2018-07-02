@@ -211,9 +211,11 @@
           {
              try
              {
+                log.info("Bulk write " + measurements.size());
                 DAOFactory.getInfluxClient().write(measurements);
                 measurements.clear();
-                Thread.sleep(1000);
+                Thread.sleep(100);
+
              }
              catch (Exception e)
              {
@@ -224,6 +226,7 @@
 
        // Bulk write out the stats
        DAOFactory.getInfluxClient().write(measurements);
+       InfluxClient.clearStampList();
        log.info("Final bulk write " + measurements.size());
     }
 

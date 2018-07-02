@@ -9,8 +9,11 @@
 
  package com.sentryfire;
 
- import com.sentryfire.persistance.DAOFactory;
+ import java.util.List;
+
+ import com.google.common.collect.Lists;
  import com.sentryfire.gui.GUIManager;
+ import com.sentryfire.persistance.DAOFactory;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -18,8 +21,32 @@
  {
     private static Logger log = LoggerFactory.getLogger(SentryMain.class);
 
+    protected static boolean isCli = true;
+
     public static void main(String[] args)
     {
+
+       if (args != null)
+       {
+          List<String> cli = Lists.newArrayList();
+          for (String opt : cli)
+          {
+             if (opt != null && opt.equals("-server"))
+             {
+                isCli = false;
+             }
+          }
+       }
+
+       if (isCli)
+       {
+          log.info("Launching cli mode.");
+          GUIManager.launchGui();
+       }
+       else
+       {
+          log.info("Launching server mode.");
+       }
 
        // Robo Dialer
 //       DailerManager manager = new DailerManager();
@@ -48,7 +75,6 @@
 //       WOHistory woHistory = new WOHistory();
 //       woHistory.updateMonthlyWOCount();
 
-       GUIManager.launchGui();
 
        DAOFactory.shutdown();
     }

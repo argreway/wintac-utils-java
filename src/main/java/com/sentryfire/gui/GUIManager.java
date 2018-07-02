@@ -13,14 +13,14 @@
  {
     private static EventHandler eventHandler;
 
-    private static boolean isConsole = false;
+    private static boolean isGUI = false;
     private static GuiThread guiThread;
 
     public static void launchGui()
     {
-       isConsole = true;
        eventHandler = new AppEventHandler();
        guiThread = MainApp.startGui(eventHandler);
+       isGUI = true;
     }
 
     public static void logMessage(String message)
@@ -33,8 +33,8 @@
        guiThread.getWindow().logMessage("ERROR: " + message);
     }
 
-    public static boolean isConsole()
+    public static boolean isGUI()
     {
-       return isConsole;
+       return isGUI;
     }
  }

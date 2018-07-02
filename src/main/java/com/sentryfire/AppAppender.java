@@ -78,14 +78,20 @@
                          final int len)
           throws IOException
        {
-          String full = new String(b);
-          GUIManager.logMessage(full.substring(off, off + len));
+          if (GUIManager.isGUI())
+          {
+             String full = new String(b);
+             GUIManager.logMessage(full.substring(off, off + len));
+          }
        }
 
        public void write(final int b) throws IOException
        {
-          System.err.write(b);
-          GUIManager.logMessage("" + b);
+          if (GUIManager.isGUI())
+          {
+             System.err.write(b);
+             GUIManager.logMessage("" + b);
+          }
        }
     }
  }

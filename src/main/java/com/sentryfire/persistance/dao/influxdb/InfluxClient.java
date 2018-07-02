@@ -126,6 +126,11 @@
        influxDB.write(createPoint(timeStamp, measurement, tags, fields));
     }
 
+    public static void clearStampList()
+    {
+       stampList.clear();
+    }
+
     public static Point createPoint(long timeStamp,
                                     String measurement,
                                     Map<String, String> tags,
