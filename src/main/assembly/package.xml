@@ -1,0 +1,63 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.1 http://maven.apache.org/xsd/assembly-1.1.1.xsd">
+
+   <id>0</id>
+
+   <baseDirectory>${componentName}-${project.version}</baseDirectory>
+   <includeBaseDirectory>false</includeBaseDirectory>
+
+   <formats>
+      <format>tar.gz</format>
+   </formats>
+
+   <dependencySets>
+      <dependencySet>
+         <unpack>false</unpack>
+         <scope>runtime</scope>
+         <useProjectArtifact>false</useProjectArtifact>
+         <outputDirectory>${componentName}/thirdparty</outputDirectory>
+      </dependencySet>
+   </dependencySets>
+
+   <fileSets>
+      <fileSet>
+         <directory>target</directory>
+         <outputDirectory>${componentName}</outputDirectory>
+         <includes>
+            <include>*.jar</include>
+         </includes>
+      </fileSet>
+      <fileSet>
+         <directory>resources</directory>
+         <outputDirectory>${componentName}/resources</outputDirectory>
+         <includes>
+            <include>*.*</include>
+            <include>*</include>
+            <include>**/*.*</include>
+            <include>**/*</include>
+         </includes>
+         <fileMode>0644</fileMode>
+      </fileSet>
+      <fileSet>
+         <directory>conf</directory>
+         <outputDirectory>${componentName}/conf</outputDirectory>
+         <includes>
+            <include>*.*</include>
+            <include>*</include>
+            <include>**/*.*</include>
+            <include>**/*</include>
+         </includes>
+         <fileMode>0644</fileMode>
+      </fileSet>
+      <fileSet>
+         <directory>bin</directory>
+         <outputDirectory>${componentName}/bin</outputDirectory>
+         <includes>
+            <include>*.*</include>
+         </includes>
+         <fileMode>0755</fileMode>
+      </fileSet>
+   </fileSets>
+
+</assembly>

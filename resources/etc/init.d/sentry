@@ -1,0 +1,83 @@
+#!/bin/bash
+#set -x
+#
+# chkconfig: 35 90 2
+# description: Sentry service script
+
+serverLocation=/opt/sentry
+serverBin=${serverLocation}/bin
+user=root
+
+source /etc/profile
+
+start() {
+        echo "Starting Sentry Server: "
+        running=$(status)
+        if [[ ${running} != *not* ]]
+        then
+          echo "Sentry server is already running."
+          return 0
+        fi
+
+        echo "Starting Sentry Server: "
+        cd ${serverBin}; su ${user} -c "./start.sh 2>&1"
+        if [ $? == 0 ]
+        then
+          echo "[OK]"
+        else
+          echo "[FAILED]"
+        fi
+}
+
+
+stop() {
+        echo "Stopping Sentry Server: "
+        cd ${serverBin}; su ${user} -c "./stop.sh 2>&1"
+}
+
+status() {
+        pid=`ps -ef | grep java | grep SentryMain | grep -v grep | awk -F  " " '{print $2}'`
+
+        if [ ! -z ${pidNodeMgr} ]
+        then
+          echo "Sentry Server running [$pid]"
+          exit 1
+        else
+          echo "Sentry Server NOT running."
+          exit 1
+        fi
+}
+
+checkUser() {
+  CUR_USER=$(whoami)
+  if [ "$CUR_USER" != "root" ] && [ "$CUR_USER" != "${user}" ]
+  then
+    echo "Must run this script as the root or ${user} users!"
+    exit 1
+  fi
+}
+
+### main logic ###
+checkUser
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status
+        ;;
+  restart|reload|condrestart)
+        stop
+        start
+        ;;
+  upgrade)
+        start 1
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|upgrade|reload|status}"
+        exit 1
+esac
+exit 0
