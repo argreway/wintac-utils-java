@@ -13,7 +13,7 @@ fi
 
 cd ${projectBaseDir}
 
-cmd="${JAVA_HOME}/bin/java -Xms1G -Xmx1G -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC -XX:-OmitStackTraceInFastThrow  -XX:+PrintGCCause  -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=4 -XX:GCLogFileSize=4M -Xloggc:/var/log/sentry/restserver-gc.log -Dorg.apache.cxf.Logger=org.apache.cxf.common.logging.Log4jLogger -Dlog4j.configuration=file:conf/log4j.properties -cp ./conf/:sentry-1.0-SNAPSHOT.jar:lib/*:thirdparty/* com.sentryfire.SentryMain"
+cmd="${JAVA_HOME}/bin/java -Xms1G -Xmx1G -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+DisableExplicitGC -XX:-OmitStackTraceInFastThrow  -XX:+PrintGCCause  -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=4 -XX:GCLogFileSize=4M -Xloggc:/var/log/sentry/restserver-gc.log -Dorg.apache.cxf.Logger=org.apache.cxf.common.logging.Log4jLogger -Dlog4j.configuration=file:conf/log4j.properties -cp ./conf/:sentry-1.0-SNAPSHOT.jar:lib/*:thirdparty/* com.sentryfire.SentryMain -server"
 
 #echo $cmd $@
 

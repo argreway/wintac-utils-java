@@ -36,5 +36,8 @@ public interface EventHandler {
 	public void handleCreateInflux(ActionEvent e);
 	public void handleDropInflux(ActionEvent e);
 
+	// Schedule Menu
+	public void handleUpdateScheduleItems(ActionEvent e);
+
 }
 

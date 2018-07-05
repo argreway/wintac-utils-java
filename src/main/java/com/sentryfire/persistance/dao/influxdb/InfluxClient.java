@@ -64,6 +64,7 @@
        PROP,
        PAY,
        ITEM,
+       WO_ITEM,
        AR
     }
 
@@ -79,6 +80,7 @@
     public static List<String> WIP_FIELDS = Lists.newArrayList("SUBTOTAL", "TOTTAX", "TOTTAX2", "MAT", "LAB", "MATC", "LABC");
     public static List<String> ITEM_FIELDS = Lists.newArrayList("COST", "RP", "TOTCOST", "POCOST", "COST", "HQ", "HQ2");
     public static List<String> ITEM_TAGS = Lists.newArrayList("MISC1", "DEPT", "DIVISION", "IC");
+    public static List<String> WO_ITEM_TAGS = Lists.newArrayList("MISC1", "DEPT", "DIVISION", "IC", "IN2");
     //public static List<String> ITEM_FIELDS = Lists.newArrayList (
     //    "COUNTER", "CN","[IN]","PAGENUM","POCOST","IC","NAME","HQ","HQ2","RP","COST","IDATE","CSDATE",
     //        "DEPT","ACC1","ACC2","INOTE","MISC1","TOTCOST" );
@@ -211,7 +213,7 @@
     public QueryResult query(String queryString)
     {
        Query query = new Query(queryString, dbName);
-       log.info("BEGIN query.");
+       log.info("BEGIN query [" + queryString + "]");
        QueryResult result = influxDB.query(query);
        log.info("END query.");
        return result;

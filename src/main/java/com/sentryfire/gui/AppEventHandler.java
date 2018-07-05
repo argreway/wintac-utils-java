@@ -215,8 +215,7 @@
           MutableDateTime end = new MutableDateTime(start);
           end.setDayOfMonth(end.dayOfMonth().getMaximumValue());
 
-          DefaultTableModel model = DAOFactory.sqlDB().getOutStandingWorkOrders(
-             start.toDateTime(), end.toDateTime());
+          DefaultTableModel model = WIPUtils.getOutStandingWorkOrders(start.toDateTime(), end.toDateTime());
           window.table.setModel(model);
           window.table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
        };
@@ -241,5 +240,23 @@
           window.table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
        };
        executor.submit(task);
+    }
+
+    @Override
+    public void handleUpdateScheduleItems(ActionEvent e)
+    {
+       Runnable task = () -> {
+          MutableDateTime start = new MutableDateTime();
+          start.setYear(2018);
+          start.setDayOfMonth(1);
+          start.setMonthOfYear(6);
+
+          MutableDateTime end = new MutableDateTime(start);
+          end.setDayOfMonth(end.dayOfMonth().getMaximumValue());
+
+          WIPUtils.getWorkOrdersWithItems();
+       };
+       executor.submit(task);
+
     }
  }

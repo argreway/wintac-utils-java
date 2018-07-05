@@ -12,7 +12,9 @@
  import java.util.List;
 
  import com.google.common.collect.Lists;
+ import com.sentryfire.business.utils.WIPUtils;
  import com.sentryfire.gui.GUIManager;
+ import com.sentryfire.model.WO;
  import com.sentryfire.persistance.DAOFactory;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
@@ -23,6 +25,21 @@
 
     protected static boolean isCli = true;
 
+//        public static void main(String[] args)
+    public static void test(String[] args)
+    {
+       DAOFactory.sqlDB().connectToDB(
+          SentryConfiguartion.getInstance().getServer(),
+          SentryConfiguartion.getInstance().getDatabase(),
+          SentryConfiguartion.getInstance().getUser(),
+          SentryConfiguartion.getInstance().getPassword());
+
+       List<WO> wos = WIPUtils.getWorkOrdersWithItems();
+
+       System.out.println("Found: " + wos.size());
+    }
+
+//    public static void test2(String[] args)
     public static void main(String[] args)
     {
 

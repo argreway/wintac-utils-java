@@ -10,20 +10,20 @@
  package com.sentryfire.persistance.dao.sql;
 
  import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Vector;
+ import java.sql.DriverManager;
+ import java.sql.ResultSet;
+ import java.sql.ResultSetMetaData;
+ import java.sql.SQLException;
+ import java.sql.Statement;
+ import java.util.Vector;
 
-import javax.swing.table.DefaultTableModel;
+ import javax.swing.table.DefaultTableModel;
 
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+ import org.joda.time.DateTime;
+ import org.joda.time.format.DateTimeFormat;
+ import org.joda.time.format.DateTimeFormatter;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
 
  public class DBConnect
  {
@@ -93,6 +93,61 @@ import org.slf4j.LoggerFactory;
        return getDataTable(selectString);
     }
 
+    public DefaultTableModel getItemsForWorkOrder(DateTime start,
+                                                  DateTime end)
+    {
+       String selectString = "SELECT " +
+                             "CASE RPG.COST " +
+                             "  WHEN 0 THEN RPG.POCOST " +
+                             "  ELSE RPG.POCOST* RPG.HQ2 " +
+                             "END AS TOTCOST, " +
+                             "RPG.[COUNTER],RPG.CN,RPG.[IN],RPG.PAGENUM,RPG.POCOST,RPG.IC, " +
+                             "RPG.NAME,RPG.HQ,RPG.HQ2,RPG.RP,RPG.COST,RPG.IDATE,RPG.CSDATE, " +
+                             "RPG.DEPT,RPG.ACC1,RPG.ACC2,RPG.INOTE,RPG.MISC1,RCV.DEPT as DIVISION, RCV.IN2 " +
+                             //",RPG.POCOST * RPG.HQ2 as TOTCOST " +
+                             "FROM RPG,RCV,CST,RCVT WHERE(((((((((({ fn length(RPG.IC )}> 0 ) " +
+                             "AND NOT((RPG.IC LIKE 'H_FLATRATE%' ))) " +
+
+//                             "AND(RPG.IDATE like '%201%' ))))" +
+
+
+                             "AND (RPG.IDATE >= { d '" + formatter.print(start) + "'} ) AND (RPG.IDATE <= { d '" + formatter.print(end) + "'} )))) " +
+
+                             "AND(RPG.TYPE IN(1, 2, 3, 4)) ) AND " +
+                             "((RCV.CN = RPG.CN) AND(RCV.[IN] = RPG.[IN]))) AND " +
+                             "((RCV.FRM = 1) AND (RCV.AUTOWIP = 0))) " +
+                             "AND(CST.CN = RCV.CN) ) AND(RCV.COUNTER = RCVT.RCVPK))";
+
+       return getDataTable(selectString);
+    }
+
+    public DefaultTableModel getItemsForWorkOrder(String in2)
+    {
+       String selectString = "SELECT " +
+                             "CASE RPG.COST " +
+                             "  WHEN 0 THEN RPG.POCOST " +
+                             "  ELSE RPG.POCOST* RPG.HQ2 " +
+                             "END AS TOTCOST, " +
+                             "RPG.[COUNTER],RPG.CN,RPG.[IN],RPG.PAGENUM,RPG.POCOST,RPG.IC, " +
+                             "RPG.NAME,RPG.HQ,RPG.HQ2,RPG.RP,RPG.COST,RPG.IDATE,RPG.CSDATE, " +
+                             "RPG.DEPT,RPG.ACC1,RPG.ACC2,RPG.INOTE,RPG.MISC1,RCV.DEPT as DIVISION, RCV.IN2 " +
+                             //",RPG.POCOST * RPG.HQ2 as TOTCOST " +
+                             "FROM RPG,RCV,CST,RCVT WHERE(((((((((({ fn length(RPG.IC )}> 0 ) " +
+                             "AND NOT((RPG.IC LIKE 'H_FLATRATE%' ))) " +
+
+                             "AND(RPG.IDATE like '%201%' ))))" +
+
+
+//                             "AND (RPG.IDATE >= { d '" + formatter.print(start) + "'} ) AND (RPG.IDATE <= { d '" + formatter.print(end) + "'}) AND(RPG.MISC1 LIKE 'ID%')))) " +
+
+                             "AND(RPG.TYPE IN(1, 2, 3, 4)) ) AND " +
+                             "((RCV.CN = RPG.CN) AND(RCV.[IN] = RPG.[IN]))) AND " +
+                             "((RCV.FRM = 1) AND (RCV.AUTOWIP = 0))) " +
+                             "AND(CST.CN = RCV.CN) ) AND(RCV.COUNTER = RCVT.RCVPK) AND RCV.IN2 = '" + in2 + "')";
+
+       return getDataTable(selectString);
+    }
+
     public DefaultTableModel getInvoiceItemTable()
     {
        try
@@ -110,7 +165,7 @@ import org.slf4j.LoggerFactory;
                                 "END AS TOTCOST, " +
                                 "RPG.[COUNTER],RPG.CN,RPG.[IN],RPG.PAGENUM,RPG.POCOST,RPG.IC, " +
                                 "RPG.NAME,RPG.HQ,RPG.HQ2,RPG.RP,RPG.COST,RPG.IDATE,RPG.CSDATE, " +
-                                "RPG.DEPT,RPG.ACC1,RPG.ACC2,RPG.INOTE,RPG.MISC1,RCV.DEPT as DIVISION " +
+                                "RPG.DEPT,RPG.ACC1,RPG.ACC2,RPG.INOTE,RPG.MISC1,RCV.DEPT as DIVISION, RCV.IN2 " +
                                 //",RPG.POCOST * RPG.HQ2 as TOTCOST " +
                                 "FROM RPG,RCV,CST,RCVT WHERE(((((((((({ fn length(RPG.IC )}> 0 ) " +
                                 "AND NOT((RPG.IC LIKE 'H_FLATRATE%' ))) " +

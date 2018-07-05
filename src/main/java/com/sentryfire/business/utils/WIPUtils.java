@@ -12,11 +12,15 @@
  import java.util.List;
  import java.util.Map;
  import java.util.Vector;
+ import java.util.stream.Collectors;
 
  import javax.swing.table.DefaultTableModel;
 
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
+ import com.sentryfire.model.Item;
+ import com.sentryfire.model.WO;
+ import com.sentryfire.model.WoItem;
  import com.sentryfire.persistance.DAOFactory;
  import com.sentryfire.persistance.dao.influxdb.InfluxClient;
  import org.influxdb.dto.Point;
@@ -37,6 +41,7 @@
     protected static MutableDateTime end;
 
     protected static DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.S");
+    protected static DateTimeFormatter msFormatter = DateTimeFormat.forPattern("M/d/yyyy HH:mm:ss a");
 
     // Start of wintac data
     static
@@ -78,9 +83,68 @@
        return dt;
     }
 
-    public static DefaultTableModel getOutStandingWorkOrders()
+    public static List<WO> getWorkOrdersWithItems()
     {
-       return DAOFactory.sqlDB().getOutStandingWorkOrders(start.toDateTime(), end.toDateTime());
+       MutableDateTime begin = new MutableDateTime();
+       begin.setYear(2018);
+       begin.setMonthOfYear(7);
+       begin.setDayOfMonth(1);
+       begin.setHourOfDay(0);
+       begin.setMinuteOfDay(0);
+       begin.setSecondOfDay(0);
+       begin.setMillisOfSecond(0);
+
+       MutableDateTime stop = new MutableDateTime(begin);
+       stop.setDayOfMonth(stop.dayOfMonth().getMaximumValue());
+       stop.setHourOfDay(stop.hourOfDay().getMaximumValue());
+       stop.setMinuteOfHour(stop.minuteOfHour().getMaximumValue());
+       stop.setSecondOfMinute(stop.secondOfMinute().getMaximumValue());
+
+       String errors = "";
+       log.info("Updating history for  [" + begin + "] to [" + stop + "]");
+       List<WO> result = DAOFactory.getWipDao().getWorkOrdersByTime(begin.toDateTime(), stop.toDateTime());
+       Map<String, Integer> map = Maps.newHashMap();
+       int count = 0;
+       try
+       {
+          List<String> list = result.stream().map(WO::getIN2).collect(Collectors.toList());
+          System.out.println("list " + list.size());
+
+          for (String in2 : list)
+          {
+             System.out.println("IN2 " + in2);
+             DefaultTableModel dt = DAOFactory.sqlDB().getItemsForWorkOrder(in2);
+             updateWIPStats(dt, InfluxClient.COL.IDATE.toString(), InfluxClient.ITEM_FIELDS, InfluxClient.WO_ITEM_TAGS, InfluxClient.MEASUREMENT.WO_ITEM.toString());
+             count += dt.getRowCount();
+             map.put(in2, dt.getRowCount());
+          }
+
+          Thread.sleep(2000);
+
+          for (WO workOrder : result)
+          {
+             List<WoItem> items = DAOFactory.getItemDao().getWOItemRecordsByIn2(begin.toDateTime(), stop.toDateTime(), workOrder.getIN2());
+             System.out.println("Items: " + items);
+             if (map.get(workOrder.getIN2()) != items.size())
+             {
+                errors = errors + "IN2 " + workOrder.getIN2() + " E: " + map.get(workOrder.getIN2()) + " F: " + items.size() + ", ";
+             }
+             workOrder.setLineItems(items);
+          }
+          System.out.println("Count " + count);
+          System.err.println(errors);
+       }
+       catch (Exception e)
+       {
+          log.error("Failed to update items in WOs ", e);
+       }
+
+       return result;
+    }
+
+    public static DefaultTableModel getOutStandingWorkOrders(DateTime begin, DateTime stop)
+    {
+       return DAOFactory.sqlDB().getOutStandingWorkOrders(begin.toDateTime(), stop.toDateTime());
     }
 
     public static DefaultTableModel insertItems()
@@ -141,6 +205,17 @@
        updateWIPStats(dataTable, dateColumn, fieldColumns, null, measurement);
     }
 
+    protected static List<Item> convertToItemsList(DefaultTableModel model)
+    {
+       List<Item> items = Lists.newArrayList();
+       if (model != null)
+       {
+
+       }
+
+       return items;
+    }
+
     protected static void updateWIPStats(DefaultTableModel dataTable,
                                          String dateColumn,
                                          List<String> fieldColumns,
@@ -169,27 +244,43 @@
              if (value == null)
                 continue;
 
+             String rowVal = row.get(i).toString();
+
              if (columnName.equals(dateColumn))
+             {
                 dateColumnIdx = i;
+                if (rowVal != null && !rowVal.trim().isEmpty())
+                {
+                   DateTime convDate = formatter.parseDateTime(rowVal);
+                   rowVal = msFormatter.print(convDate);
+                }
+             }
+
 
              if (isField(fieldColumns, columnName))
              {
-                fields.put(columnName, Float.parseFloat(row.get(i).toString()));
+                fields.put(columnName, Float.parseFloat(rowVal));
              }
              else if (isField(tagColumns, columnName))
              {
-                String tValue = row.get(i).toString().trim().replace(" ", "_");
+                String tValue = rowVal.trim().replace(" ", "_");
+                if (tValue.endsWith(".0"))
+                   tValue = tValue.substring(0, tValue.indexOf("."));
                 tags.put(columnName, tValue);
              }
              else if (tagColumns != null)
              {
                 // Everything else should be treated as a string value
-                String tValue = row.get(i).toString().trim().replace(" ", "_");
+                String tValue = rowVal.trim().replace(" ", "_");
+                if (tValue.endsWith(".0"))
+                   tValue = tValue.substring(0, tValue.indexOf("."));
                 fields.put(columnName, tValue);
              }
              else
              {
-                String tValue = row.get(i).toString().trim().replace(" ", "_");
+                String tValue = rowVal.trim().replace(" ", "_");
+                if (tValue.endsWith(".0"))
+                   tValue = tValue.substring(0, tValue.indexOf("."));
                 tags.put(columnName, tValue);
              }
           }
@@ -215,7 +306,6 @@
                 DAOFactory.getInfluxClient().write(measurements);
                 measurements.clear();
                 Thread.sleep(100);
-
              }
              catch (Exception e)
              {

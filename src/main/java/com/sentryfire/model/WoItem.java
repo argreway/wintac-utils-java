@@ -13,8 +13,8 @@
  import org.influxdb.annotation.Measurement;
 
 
- @Measurement (name = "ITEM")
- public class Item
+ @Measurement (name = "WO_ITEM")
+ public class WoItem
  {
     @Column (name = "time")
     protected String time;

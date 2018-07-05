@@ -3,6 +3,9 @@ package com.sentryfire.gui;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -10,7 +13,6 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -32,8 +34,6 @@ public class MainApp {
 	public JTextField textFieldServer;
 	public JTextField textFieldDB;
 	public JTextField textFieldUser;
-	public JTextField textField;
-	public JButton btnButton;
 	public JPasswordField passwordField;
 	public final JScrollPane scrollTablePane = new JScrollPane();
 	public JTable table;
@@ -60,6 +60,7 @@ public class MainApp {
 				try {
 					MainApp window = new MainApp();
 					window.frame.setVisible(true);
+					window.table.setAutoCreateRowSorter(true);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -105,9 +106,14 @@ public class MainApp {
 		});
 		frame.setBounds(100, 100, 1212, 756);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		GridBagLayout gridBagLayout = new GridBagLayout();
+		gridBagLayout.columnWidths = new int[]{1210, 0};
+		gridBagLayout.rowHeights = new int[]{22, 60, 521, 108, 0};
+		gridBagLayout.columnWeights = new double[]{1.0, Double.MIN_VALUE};
+		gridBagLayout.rowWeights = new double[]{0.0, 0.0, 1.0, 0.0, Double.MIN_VALUE};
+		frame.getContentPane().setLayout(gridBagLayout);
 
 		JMenuBar mainMenuBar = new JMenuBar();
-		mainMenuBar.setBounds(0, 0, 1210, 22);
 		mainMenuBar.addFocusListener(new FocusAdapter() {
 			@Override
 			public void focusGained(FocusEvent e) {
@@ -288,15 +294,36 @@ public class MainApp {
 				eh.handleDropInflux(e);
 			}
 		});
-		frame.getContentPane().setLayout(null);
 		mntmDropDb.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
 		mnNewMenu_1.add(mntmDropDb);
-		frame.getContentPane().add(mainMenuBar);
+		GridBagConstraints gbc_mainMenuBar = new GridBagConstraints();
+		gbc_mainMenuBar.fill = GridBagConstraints.BOTH;
+		gbc_mainMenuBar.insets = new Insets(0, 0, 5, 0);
+		gbc_mainMenuBar.gridx = 0;
+		gbc_mainMenuBar.gridy = 0;
+		frame.getContentPane().add(mainMenuBar, gbc_mainMenuBar);
+
+		JMenu mnSchedule = new JMenu("Schedule");
+		mnSchedule.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
+		mainMenuBar.add(mnSchedule);
+
+		JMenuItem mntmUpdateWoItems = new JMenuItem("Update WO Items");
+		mntmUpdateWoItems.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				eh.handleUpdateScheduleItems(e);
+			}
+		});
+		mntmUpdateWoItems.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
+		mnSchedule.add(mntmUpdateWoItems);
 
 		JPanel pannelDB = new JPanel();
-		pannelDB.setBounds(0, 22, 1210, 32);
 		pannelDB.setBackground(Color.GRAY);
-		frame.getContentPane().add(pannelDB);
+		GridBagConstraints gbc_pannelDB = new GridBagConstraints();
+		gbc_pannelDB.fill = GridBagConstraints.BOTH;
+		gbc_pannelDB.insets = new Insets(0, 0, 5, 0);
+		gbc_pannelDB.gridx = 0;
+		gbc_pannelDB.gridy = 1;
+		frame.getContentPane().add(pannelDB, gbc_pannelDB);
 		pannelDB.setLayout(null);
 
 		textFieldServer = new JTextField();
@@ -340,52 +367,34 @@ public class MainApp {
 		passwordField = new JPasswordField();
 		passwordField.setBounds(555, 0, 95, 26);
 		pannelDB.add(passwordField);
-
-		JPanel panelFind = new JPanel();
-		panelFind.setBounds(0, 53, 1210, 34);
-		panelFind.setBackground(Color.CYAN);
-		frame.getContentPane().add(panelFind);
-		panelFind.setLayout(null);
-
-		textField = new JTextField();
-		textField.setBounds(61, 6, 112, 22);
-		textField.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
-		textField.setColumns(10);
-		panelFind.add(textField);
-
-		JLabel lblFind = new JLabel("Find:");
-		lblFind.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
-		lblFind.setBounds(26, 8, 61, 16);
-		panelFind.add(lblFind);
-
-		JLabel labelStatus = new JLabel("");
-		labelStatus.setBounds(219, 8, 436, 20);
-		panelFind.add(labelStatus);
-
-		btnButton = new JButton("Button");
-		btnButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-
-			}
-		});
-		btnButton.setBounds(185, 3, 117, 29);
-		panelFind.add(btnButton);
-		scrollTablePane.setBounds(0, 87, 1210, 526);
-		frame.getContentPane().add(scrollTablePane);
+		GridBagConstraints gbc_scrollTablePane = new GridBagConstraints();
+		gbc_scrollTablePane.fill = GridBagConstraints.BOTH;
+		gbc_scrollTablePane.insets = new Insets(0, 0, 5, 0);
+		gbc_scrollTablePane.gridx = 0;
+		gbc_scrollTablePane.gridy = 2;
+		frame.getContentPane().add(scrollTablePane, gbc_scrollTablePane);
 
 		table = new JTable();
 		scrollTablePane.setViewportView(table);
 
 		JSeparator separator = new JSeparator();
-		separator.setBounds(0, 612, 1210, 12);
-		frame.getContentPane().add(separator);
+		GridBagConstraints gbc_separator = new GridBagConstraints();
+		gbc_separator.anchor = GridBagConstraints.SOUTH;
+		gbc_separator.fill = GridBagConstraints.HORIZONTAL;
+		gbc_separator.gridx = 0;
+		gbc_separator.gridy = 3;
+		frame.getContentPane().add(separator, gbc_separator);
 
 		JScrollPane scrollPaneLogs = new JScrollPane();
-		scrollPaneLogs.setBounds(0, 620, 1210, 108);
-		frame.getContentPane().add(scrollPaneLogs);
+		GridBagConstraints gbc_scrollPaneLogs = new GridBagConstraints();
+		gbc_scrollPaneLogs.fill = GridBagConstraints.BOTH;
+		gbc_scrollPaneLogs.gridx = 0;
+		gbc_scrollPaneLogs.gridy = 3;
+		frame.getContentPane().add(scrollPaneLogs, gbc_scrollPaneLogs);
 
 		textAreaLogger = new JTextArea();
 		textAreaLogger.setEditable(false);
 		scrollPaneLogs.setViewportView(textAreaLogger);
 	}
 }
+

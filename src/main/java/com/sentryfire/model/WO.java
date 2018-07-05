@@ -9,6 +9,8 @@
 
  package com.sentryfire.model;
 
+ import java.util.List;
+
  import org.influxdb.annotation.Column;
  import org.influxdb.annotation.Measurement;
 
@@ -56,6 +58,9 @@
     protected String MATC;
     @Column (name = "RCVNKey")
     protected String RCVNKey;
+
+    protected List<WoItem> lineItems;
+
 
     public String getTime()
     {
@@ -257,6 +262,16 @@
        this.RCVNKey = RCVNKey;
     }
 
+    public List<WoItem> getLineItems()
+    {
+       return lineItems;
+    }
+
+    public void setLineItems(List<WoItem> lineItems)
+    {
+       this.lineItems = lineItems;
+    }
+
     @Override
     public String toString()
     {
@@ -281,6 +296,7 @@
               ", MAT='" + MAT + '\'' +
               ", MATC='" + MATC + '\'' +
               ", RCVNKey='" + RCVNKey + '\'' +
+              ", lineItems=" + lineItems +
               '}';
     }
  }
