@@ -11,7 +11,8 @@
 
  import java.util.TimerTask;
 
- import com.sentryfire.business.utils.WIPUtils;
+ import com.sentryfire.business.history.HistoryDataUtils;
+ import com.sentryfire.business.utils.RealTimeDataUtils;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,8 @@
        log.info("Timer fired updating stats...");
        try
        {
-          WIPUtils.insertAllStats();
+          RealTimeDataUtils.insertAllStats();
+          HistoryDataUtils.insertAllHistoryStats();
        }
        catch (Exception e)
        {

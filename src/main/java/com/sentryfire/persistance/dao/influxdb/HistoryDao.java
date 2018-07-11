@@ -14,9 +14,11 @@
 
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
- import com.sentryfire.persistance.DAOFactory;
  import com.sentryfire.model.LaborHistory;
+ import com.sentryfire.model.WOHistory;
+ import com.sentryfire.persistance.DAOFactory;
  import org.influxdb.dto.Point;
+ import org.influxdb.dto.QueryResult;
  import org.joda.time.DateTime;
  import org.joda.time.DateTimeZone;
  import org.slf4j.Logger;
@@ -26,8 +28,8 @@
  {
 
     Logger log = LoggerFactory.getLogger(getClass());
-    public static final String MEASUREMENT_ER = "eff_ratio";
-    public static final String MEASUREMENT_WO = "wo_history";
+
+    public static final String ALL_WO_HISTORY = "select * from " + InfluxClient.MEASUREMENT_HISTORY.WO_HISTORY;
 
     public void writeLaborHistoryRecords(List<LaborHistory> laborHistories)
     {
@@ -64,7 +66,7 @@
                 tags.put("year", year);
                 tags.put("month", entry.getKey());
 
-                points.add(InfluxClient.createPoint(ts.getMillis(), MEASUREMENT_WO, tags, fields));
+                points.add(InfluxClient.createPoint(ts.getMillis(), InfluxClient.MEASUREMENT_HISTORY.WO_HISTORY.toString(), tags, fields));
              }
           }
 
@@ -76,6 +78,25 @@
           e.printStackTrace();
           log.error("Failed to write history items to influxdb." + e);
        }
+    }
+
+    public List<WOHistory> getWOHistory(DateTime start,
+                                        DateTime end)
+    {
+       try
+       {
+          String queryString = ALL_WO_HISTORY + " WHERE time >= " + start.getMillis() + "ms AND time <= " + end.getMillis() + "ms";
+          QueryResult queryResult = DAOFactory.getInfluxClient().query(queryString);
+
+          List<WOHistory> results = DAOFactory.getResultMapper().toPOJO(queryResult, WOHistory.class);
+          return results;
+       }
+       catch (Exception e)
+       {
+          e.printStackTrace();
+          log.error("Failed to get wo history from influxdb." + e);
+       }
+       return null;
     }
 
     protected List<Point> getHistoryPoints(List<LaborHistory> histories)
@@ -98,7 +119,7 @@
 
           DateTime timeStamp = new DateTime(history.getTime());
 
-          points.add(InfluxClient.createPoint(timeStamp.getMillis(), MEASUREMENT_ER, tags, fields));
+          points.add(InfluxClient.createPoint(timeStamp.getMillis(), InfluxClient.MEASUREMENT_HISTORY.EFF_RATIO.toString(), tags, fields));
        }
 
        return points;

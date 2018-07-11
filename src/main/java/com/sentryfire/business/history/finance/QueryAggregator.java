@@ -13,17 +13,20 @@
  import java.util.Objects;
 
  import com.google.common.collect.Lists;
- import com.sentryfire.persistance.DAOFactory;
  import com.sentryfire.model.Item;
  import com.sentryfire.model.LaborHistory;
  import com.sentryfire.model.Payroll;
+ import com.sentryfire.persistance.DAOFactory;
  import org.joda.time.DateTime;
  import org.joda.time.MutableDateTime;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
 
  public class QueryAggregator
  {
+    Logger log = LoggerFactory.getLogger(getClass());
 
-    public void laborEfficencyRatios()
+    public void laborEfficencyRatiosYearly()
     {
        DateTime now = new DateTime();
 
@@ -33,14 +36,16 @@
        start.setYear(year);
        start.setMonthOfYear(1);
        start.setDayOfMonth(1);
+       start.setHourOfDay(0);
        start.setMinuteOfDay(0);
+       start.setSecondOfDay(0);
 
        MutableDateTime end = new MutableDateTime();
        end.setYear(year);
        end.setMonthOfYear(12);
        end.setDayOfMonth(31);
-       end.setHourOfDay(23);
-       end.setMinuteOfHour(59);
+       end.setHourOfDay(end.hourOfDay().getMaximumValue());
+       end.setMinuteOfHour(end.minuteOfHour().getMaximumValue());
 
        List<LaborHistory> historyList = Lists.newArrayList();
 
@@ -62,7 +67,7 @@
           Double contribMargin = grossProfit - directLabor;
           Double netProfit = contribMargin - fixedLabor;
 
-          System.out.println("Date: " + end + " Rev: " + revenue + " Cost: " + cost + " Pay: " + totalPay + " DL: " + directLabor + " FL: " + fixedLabor);
+          log.info("Date: " + end + " Rev: " + revenue + " Cost: " + cost + " Pay: " + totalPay + " DL: " + directLabor + " FL: " + fixedLabor);
           LaborHistory history = new LaborHistory();
           history.setTime(end.toString());
           history.setTotalRevenue(revenue);

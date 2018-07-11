@@ -61,4 +61,23 @@
        return null;
     }
 
+    public List<WO> getHistoryWorkOrdersByTime(DateTime start,
+                                        DateTime end)
+    {
+       try
+       {
+          String queryString = ALL_WO + " WHERE time >= " + start.getMillis() + "ms AND time <= " + end.getMillis() + "ms";
+          QueryResult queryResult = DAOFactory.getHistoryInfluxClient().query(queryString);
+
+          List<WO> results = DAOFactory.getResultMapper().toPOJO(queryResult, WO.class);
+          return results;
+       }
+       catch (Exception e)
+       {
+          e.printStackTrace();
+          log.error("Failed to query influxdb for WO." + e);
+       }
+       return null;
+    }
+
  }

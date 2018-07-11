@@ -9,13 +9,14 @@
 
  package com.sentryfire;
 
+ import java.util.Arrays;
  import java.util.List;
 
  import com.google.common.collect.Lists;
- import com.sentryfire.business.utils.WIPUtils;
+ import com.sentryfire.business.history.HistoryDataUtils;
  import com.sentryfire.gui.GUIManager;
- import com.sentryfire.model.WO;
  import com.sentryfire.persistance.DAOFactory;
+ import com.sentryfire.timers.StatsTimer;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -25,7 +26,9 @@
 
     protected static boolean isCli = true;
 
-//        public static void main(String[] args)
+    protected static StatsTimer timer;
+
+    //    public static void main(String[] args)
     public static void test(String[] args)
     {
        DAOFactory.sqlDB().connectToDB(
@@ -34,36 +37,7 @@
           SentryConfiguartion.getInstance().getUser(),
           SentryConfiguartion.getInstance().getPassword());
 
-       List<WO> wos = WIPUtils.getWorkOrdersWithItems();
-
-       System.out.println("Found: " + wos.size());
-    }
-
-//    public static void test2(String[] args)
-    public static void main(String[] args)
-    {
-
-       if (args != null)
-       {
-          List<String> cli = Lists.newArrayList();
-          for (String opt : cli)
-          {
-             if (opt != null && opt.equals("-server"))
-             {
-                isCli = false;
-             }
-          }
-       }
-
-       if (isCli)
-       {
-          log.info("Launching cli mode.");
-          GUIManager.launchGui();
-       }
-       else
-       {
-          log.info("Launching server mode.");
-       }
+       HistoryDataUtils.insertAllHistoryStats();
 
        // Robo Dialer
 //       DailerManager manager = new DailerManager();
@@ -83,17 +57,45 @@
 
        // Labor Effeciencies
 //       QueryAggregator aggregator = new QueryAggregator();
-//       aggregator.laborEfficencyRatios();
+//       aggregator.laborEfficencyRatiosYearly();
 
        // Google Maps stuff
 //       GoogleMapsClient googleMapsClient = new GoogleMapsClient();
 //       googleMapsClient.route();
 
-//       WOHistory woHistory = new WOHistory();
+//       WOHistoryManager woHistory = new WOHistoryManager();
 //       woHistory.updateMonthlyWOCount();
+    }
 
+    //    public static void test2(String[] args)
+    public static void main(String[] args)
+    {
+       log.info("CLI Args " + Arrays.toString(args));
 
-       DAOFactory.shutdown();
+       if (args != null)
+       {
+          List<String> cli = Lists.newArrayList(args);
+          for (String opt : cli)
+          {
+             if (opt != null && opt.equals("-server"))
+             {
+                isCli = false;
+             }
+          }
+       }
+
+       if (isCli)
+       {
+          log.info("Launching cli mode.");
+          GUIManager.launchGui();
+          DAOFactory.shutdown();
+       }
+       else
+       {
+          log.info("Launching server mode.");
+          timer = new StatsTimer();
+          timer.startTimer();
+       }
     }
 
  }

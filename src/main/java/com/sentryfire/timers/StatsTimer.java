@@ -22,7 +22,8 @@
     Logger log = LoggerFactory.getLogger(getClass());
 
     // 15 mins
-    protected long delay = 900000;
+    protected long delay = 10000;
+//    protected long delay = 900000;
     // 24 hours
     protected long interval = 86400000;
     Timer timer = new Timer(true);
@@ -31,7 +32,7 @@
     {
        StatsTimerTask timerTask = new StatsTimerTask();
        timer.scheduleAtFixedRate(timerTask, delay, interval);
-       System.out.println("TimerTask started");
+       log.info("TimerTask started");
 
        DAOFactory.sqlDB().connectToDB(
           SentryConfiguartion.getInstance().getServer(),

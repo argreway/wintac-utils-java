@@ -18,7 +18,8 @@
  import javax.swing.table.DefaultTableModel;
 
  import com.sentryfire.SentryConfiguartion;
- import com.sentryfire.business.utils.WIPUtils;
+ import com.sentryfire.business.history.HistoryDataUtils;
+ import com.sentryfire.business.utils.RealTimeDataUtils;
  import com.sentryfire.persistance.DAOFactory;
  import org.joda.time.MutableDateTime;
  import org.slf4j.Logger;
@@ -79,7 +80,7 @@
     public void handleUpdateWO(ActionEvent e)
     {
        Runnable task = () -> {
-          DefaultTableModel model = WIPUtils.insertWorkOrderStats();
+          DefaultTableModel model = RealTimeDataUtils.insertWorkOrderStats();
           window.table.setModel(model);
           window.table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
        };
@@ -89,7 +90,7 @@
     @Override
     public void handleUpdateINV(ActionEvent e)
     {
-       DefaultTableModel model = WIPUtils.insertInvoiceStats();
+       DefaultTableModel model = RealTimeDataUtils.insertInvoiceStats();
        window.table.setModel(model);
        window.table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
     }
@@ -98,7 +99,7 @@
     public void handleUpdateAR(ActionEvent e)
     {
        Runnable task = () -> {
-          DefaultTableModel model = WIPUtils.insertARStats();
+          DefaultTableModel model = RealTimeDataUtils.insertARStats();
           window.table.setModel(model);
           window.table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
        };
@@ -109,7 +110,7 @@
     public void handleUpdatePO(ActionEvent e)
     {
        Runnable task = () -> {
-          DefaultTableModel model = WIPUtils.insertPurchaseOrders();
+          DefaultTableModel model = RealTimeDataUtils.insertPurchaseOrders();
           window.table.setModel(model);
           window.table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
        };
@@ -121,7 +122,7 @@
     public void handleUpdatePay(ActionEvent e)
     {
        Runnable task = () -> {
-          DefaultTableModel model = WIPUtils.insertPayrollStats();
+          DefaultTableModel model = RealTimeDataUtils.insertPayrollStats();
           window.table.setModel(model);
           window.table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
        };
@@ -132,7 +133,7 @@
     public void handleUpdateProp(ActionEvent e)
     {
        Runnable task = () -> {
-          DefaultTableModel model = WIPUtils.insertProposalStats();
+          DefaultTableModel model = RealTimeDataUtils.insertProposalStats();
           window.table.setModel(model);
           window.table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
        };
@@ -144,7 +145,7 @@
     {
        Runnable task = () -> {
 
-          DefaultTableModel model = WIPUtils.insertItems();
+          DefaultTableModel model = RealTimeDataUtils.insertItems();
           window.table.setModel(model);
           window.table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
        };
@@ -156,7 +157,7 @@
     public void handleUpdateAll(ActionEvent e)
     {
        Runnable task = () -> {
-          DefaultTableModel model = WIPUtils.insertAllStats();
+          DefaultTableModel model = RealTimeDataUtils.insertAllStats();
           window.table.setModel(model);
           window.table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
        };
@@ -176,9 +177,24 @@
     public void handleDropInflux(ActionEvent e)
     {
        Runnable task = () -> {
-          DAOFactory.getInfluxClient().dropDataBase();
+          DAOFactory.getHistoryInfluxClient().dropDataBase();
        };
        executor.submit(task);
+    }
+
+    @Override
+    public void handleCreateInfluxHistory(ActionEvent e)
+    {
+       Runnable task = () -> {
+          DAOFactory.getHistoryInfluxClient().createDataBase();
+       };
+       executor.submit(task);
+    }
+
+    @Override
+    public void handleDropInfluxHistory(ActionEvent e)
+    {
+
     }
 
     @Override
@@ -215,7 +231,7 @@
           MutableDateTime end = new MutableDateTime(start);
           end.setDayOfMonth(end.dayOfMonth().getMaximumValue());
 
-          DefaultTableModel model = WIPUtils.getOutStandingWorkOrders(start.toDateTime(), end.toDateTime());
+          DefaultTableModel model = RealTimeDataUtils.getOutStandingWorkOrders(start.toDateTime(), end.toDateTime());
           window.table.setModel(model);
           window.table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
        };
@@ -246,15 +262,7 @@
     public void handleUpdateScheduleItems(ActionEvent e)
     {
        Runnable task = () -> {
-          MutableDateTime start = new MutableDateTime();
-          start.setYear(2018);
-          start.setDayOfMonth(1);
-          start.setMonthOfYear(6);
-
-          MutableDateTime end = new MutableDateTime(start);
-          end.setDayOfMonth(end.dayOfMonth().getMaximumValue());
-
-          WIPUtils.getWorkOrdersWithItems();
+          HistoryDataUtils.insertAllHistoryStats();
        };
        executor.submit(task);
 

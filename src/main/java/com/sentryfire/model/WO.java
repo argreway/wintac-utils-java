@@ -59,7 +59,7 @@
     @Column (name = "RCVNKey")
     protected String RCVNKey;
 
-    protected List<WoItem> lineItems;
+    protected List<Item> lineItems;
 
 
     public String getTime()
@@ -262,12 +262,12 @@
        this.RCVNKey = RCVNKey;
     }
 
-    public List<WoItem> getLineItems()
+    public List<Item> getLineItems()
     {
        return lineItems;
     }
 
-    public void setLineItems(List<WoItem> lineItems)
+    public void setLineItems(List<Item> lineItems)
     {
        this.lineItems = lineItems;
     }

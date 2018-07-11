@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source /etc/profile
+export JAVA_HOME=/usr/java/latest
 
 current=`pwd`
 projectBaseDir=/opt/sentry/SentryMain

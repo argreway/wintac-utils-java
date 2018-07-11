@@ -103,7 +103,7 @@
                              "END AS TOTCOST, " +
                              "RPG.[COUNTER],RPG.CN,RPG.[IN],RPG.PAGENUM,RPG.POCOST,RPG.IC, " +
                              "RPG.NAME,RPG.HQ,RPG.HQ2,RPG.RP,RPG.COST,RPG.IDATE,RPG.CSDATE, " +
-                             "RPG.DEPT,RPG.ACC1,RPG.ACC2,RPG.INOTE,RPG.MISC1,RCV.DEPT as DIVISION, RCV.IN2 " +
+                             "RPG.DEPT,RPG.ACC1,RPG.ACC2,RPG.INOTE,RPG.MISC1,RPG.TYPE, RCV.DEPT as DIVISION, RCV.IN2 " +
                              //",RPG.POCOST * RPG.HQ2 as TOTCOST " +
                              "FROM RPG,RCV,CST,RCVT WHERE(((((((((({ fn length(RPG.IC )}> 0 ) " +
                              "AND NOT((RPG.IC LIKE 'H_FLATRATE%' ))) " +
@@ -130,7 +130,7 @@
                              "END AS TOTCOST, " +
                              "RPG.[COUNTER],RPG.CN,RPG.[IN],RPG.PAGENUM,RPG.POCOST,RPG.IC, " +
                              "RPG.NAME,RPG.HQ,RPG.HQ2,RPG.RP,RPG.COST,RPG.IDATE,RPG.CSDATE, " +
-                             "RPG.DEPT,RPG.ACC1,RPG.ACC2,RPG.INOTE,RPG.MISC1,RCV.DEPT as DIVISION, RCV.IN2 " +
+                             "RPG.DEPT,RPG.ACC1,RPG.ACC2,RPG.INOTE,RPG.MISC1, RPG.TYPE, RCV.DEPT as DIVISION, RCV.IN2 " +
                              //",RPG.POCOST * RPG.HQ2 as TOTCOST " +
                              "FROM RPG,RCV,CST,RCVT WHERE(((((((((({ fn length(RPG.IC )}> 0 ) " +
                              "AND NOT((RPG.IC LIKE 'H_FLATRATE%' ))) " +
@@ -165,7 +165,7 @@
                                 "END AS TOTCOST, " +
                                 "RPG.[COUNTER],RPG.CN,RPG.[IN],RPG.PAGENUM,RPG.POCOST,RPG.IC, " +
                                 "RPG.NAME,RPG.HQ,RPG.HQ2,RPG.RP,RPG.COST,RPG.IDATE,RPG.CSDATE, " +
-                                "RPG.DEPT,RPG.ACC1,RPG.ACC2,RPG.INOTE,RPG.MISC1,RCV.DEPT as DIVISION, RCV.IN2 " +
+                                "RPG.DEPT,RPG.ACC1,RPG.ACC2,RPG.INOTE,RPG.MISC1, RPG.TYPE, RCV.DEPT as DIVISION, RCV.IN2 " +
                                 //",RPG.POCOST * RPG.HQ2 as TOTCOST " +
                                 "FROM RPG,RCV,CST,RCVT WHERE(((((((((({ fn length(RPG.IC )}> 0 ) " +
                                 "AND NOT((RPG.IC LIKE 'H_FLATRATE%' ))) " +
@@ -268,8 +268,8 @@
        return null;
     }
 
-    public DefaultTableModel getOutStandingWorkOrders(DateTime start,
-                                                      DateTime end)
+    public DefaultTableModel getWorkOrdersByTime(DateTime start,
+                                                 DateTime end)
     {
        return getRCVDataTable(start, end, 1);
     }

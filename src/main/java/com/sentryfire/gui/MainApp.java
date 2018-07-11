@@ -296,6 +296,24 @@ public class MainApp {
 		});
 		mntmDropDb.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
 		mnNewMenu_1.add(mntmDropDb);
+
+		JMenuItem mntmCreateHistoryDb = new JMenuItem("Create History DB");
+		mntmCreateHistoryDb.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				eh.handleCreateInfluxHistory(e);
+			}
+		});
+		mntmCreateHistoryDb.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
+		mnNewMenu_1.add(mntmCreateHistoryDb);
+
+		JMenuItem mntmDropHistoryDb = new JMenuItem("Drop History DB");
+		mntmDropHistoryDb.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				eh.handleDropInfluxHistory(e);
+			}
+		});
+		mntmDropHistoryDb.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
+		mnNewMenu_1.add(mntmDropHistoryDb);
 		GridBagConstraints gbc_mainMenuBar = new GridBagConstraints();
 		gbc_mainMenuBar.fill = GridBagConstraints.BOTH;
 		gbc_mainMenuBar.insets = new Insets(0, 0, 5, 0);

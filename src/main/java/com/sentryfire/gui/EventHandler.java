@@ -35,6 +35,8 @@ public interface EventHandler {
 	// InfluxDB Menu
 	public void handleCreateInflux(ActionEvent e);
 	public void handleDropInflux(ActionEvent e);
+	public void handleCreateInfluxHistory(ActionEvent e);
+	public void handleDropInfluxHistory(ActionEvent e);
 
 	// Schedule Menu
 	public void handleUpdateScheduleItems(ActionEvent e);
