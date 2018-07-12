@@ -67,6 +67,8 @@
 
     protected List<Item> lineItems;
 
+    protected WOMeta metaData = new WOMeta();
+
 
     public String getTime()
     {
@@ -278,6 +280,16 @@
        this.lineItems = lineItems;
     }
 
+    public WOMeta getMetaData()
+    {
+       return metaData;
+    }
+
+    public void setMetaData(WOMeta metaData)
+    {
+       this.metaData = metaData;
+    }
+
     public String getCITY()
     {
        return CITY;
@@ -336,6 +348,7 @@
               ", STATE='" + STATE + '\'' +
               ", ZIP='" + ZIP + '\'' +
               ", lineItems=" + lineItems +
+              ", metaData=" + metaData +
               '}';
     }
  }

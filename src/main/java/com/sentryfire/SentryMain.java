@@ -28,8 +28,8 @@
 
     protected static StatsTimer timer;
 
-    //    public static void main(String[] args)
-    public static void test(String[] args)
+        public static void main(String[] args)
+//    public static void test(String[] args)
     {
        SentryAppConfiguartion.getInstance();
        DAOFactory.sqlDB().connectToDB(
@@ -66,8 +66,8 @@
 //       woHistory.updateMonthlyWOCount();
     }
 
-    //    public static void test2(String[] args)
-    public static void main(String[] args)
+        public static void test2(String[] args)
+//    public static void main(String[] args)
     {
        log.info("CLI Args " + Arrays.toString(args));
 

@@ -9,12 +9,14 @@
 
  package com.sentryfire.business.googlemaps;
 
+ import java.util.Collection;
  import java.util.List;
  import java.util.Map;
  import java.util.Set;
  import java.util.stream.Collectors;
 
  import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
  import com.google.gson.Gson;
  import com.google.gson.GsonBuilder;
  import com.google.maps.GeoApiContext;
@@ -22,7 +24,9 @@
  import com.google.maps.model.GeocodingResult;
  import com.sentryfire.SentryAppConfiguartion;
  import com.sentryfire.model.Item;
+ import com.sentryfire.model.ItemStatHolder;
  import com.sentryfire.model.WO;
+ import com.sentryfire.model.WOMeta;
  import com.sentryfire.persistance.DAOFactory;
  import org.joda.time.MutableDateTime;
  import org.slf4j.Logger;
@@ -43,20 +47,21 @@
        List<WO> cosprings = result.stream().filter(w -> w.getDEPT().equals("CO_SPRINGS")).collect(Collectors.toList());
 
 
-       log.info("\n\n\nDenver Count: " + denver.size());
+       log.info("\n\n\nDenver WO Count: " + denver.size());
        calculateWorkload(denver);
-       log.info("\n\n\nGreeley Count: " + greeley.size());
+       log.info("\n\n\nGreeley WO Count: " + greeley.size());
        calculateWorkload(greeley);
-       log.info("\n\n\nCOSprings Count: " + cosprings.size());
+       log.info("\n\n\nCOSprings WO Count: " + cosprings.size());
        calculateWorkload(cosprings);
 
-       log.info("\n\n\nTotal Count: " + result.size());
+       log.info("\n\n\nTotal WO Count: " + result.size());
        calculateWorkload(result);
 
 
 //       Set<String> itemCodes = result.stream().map(WO::getLineItems).flatMap(i -> i.stream()).collect(Collectors.toList()).
 //          stream().map(Item::getIC).collect(Collectors.toSet());
 //       mapTechs(list);
+       System.out.println("done");
 //       map();
 
     }
@@ -64,42 +69,50 @@
     private void calculateWorkload(List<WO> list)
     {
        Map<String, Integer> itemTimes = SentryAppConfiguartion.getInstance().getItemTimeMinsMap();
-       Map<String, StatHolder> totalTimes = Maps.newHashMap();
-       List<Item> allItems = list.stream().map(WO::getLineItems).flatMap(i -> i.stream()).collect(Collectors.toList());
+//       List<Item> allItems = list.stream().map(WO::getLineItems).flatMap(i -> i.stream()).collect(Collectors.toList());
+       Set<String> unknown = Sets.newHashSet();
 
 
-       for (Item item : allItems)
+       for (WO wo : list)
        {
-          String ic = item.getIC();
-          for (Map.Entry<String, Integer> entry : itemTimes.entrySet())
+          WOMeta meta = new WOMeta();
+          wo.setMetaData(meta);
+          for (Item item : wo.getLineItems())
           {
-             if (ic != null && item.getHQ() != null && ic.equals(entry.getKey()) && entry.getValue() != null)
-             {
-                StatHolder current = totalTimes.get(ic);
-                int total = item.getHQ() * entry.getValue();
-                if (current == null)
-                {
-                   current = new StatHolder();
-                   current.min = 0;
-                   current.count = 0;
-                   totalTimes.put(ic, current);
-                }
+             String ic = item.getIC();
+             ItemStatHolder current = new ItemStatHolder(0, 0, ic);
+             meta.getItemStatHolderList().add(current);
 
-                current.min += total;
-                current.count += item.getHQ();
+             if (ic != null && item.getHQ() != null)
+             {
+                Integer time = itemTimes.get(ic);
+                if (time != null)
+                {
+                   current.setMin(item.getHQ() * time);
+                   current.setCount(item.getHQ());
+                }
+                else
+                {
+                   unknown.add(ic);
+                }
              }
           }
        }
-       System.out.println(totalTimes);
+
+       log.error("Unknown item times: " + unknown);
+       List<ItemStatHolder> allItemStats = list.stream().map(WO::getMetaData).map(WOMeta::getItemStatHolderList).flatMap(Collection::stream).collect(Collectors.toList());
+
+
        log.info("Totals Per Item Type:");
-       log.info(totalTimes.toString());
+       printItemTotals(allItemStats);
        log.info("----------");
 
        Integer driveTotal = list.size() * SentryAppConfiguartion.getInstance().getDriveTime();
        log.info("Drive Total: " + driveTotal);
 
-       Integer subTotal = totalTimes.values().stream().map(h -> h.min).mapToInt(Number::intValue).sum();
-       subTotal += driveTotal;
+       Integer workTotal = allItemStats.stream().map(ItemStatHolder::getMin).mapToInt(Number::intValue).sum();
+       log.info("Work Item Total: " + workTotal);
+       Integer subTotal = driveTotal + workTotal;
        log.info("----------");
        log.info("Sum (Min): " + subTotal);
        log.info("Sum (Hours): " + subTotal / 60.0);
@@ -169,17 +182,25 @@
        return item.replace("_", " ");
     }
 
-    protected class StatHolder
+    protected void printItemTotals(List<ItemStatHolder> allItemHolders)
     {
-       public Integer min;
-       public Integer count;
-
-       @Override
-       public String toString()
+       Map<String, ItemStatHolder> sum = Maps.newHashMap();
+       for (ItemStatHolder h : allItemHolders)
        {
-          return "(min=" + min +
-                 ", count=" + count + ")";
+          ItemStatHolder current = sum.get(h.getItemCode());
+          if (current == null)
+          {
+             current = new ItemStatHolder(0, 0, h.getItemCode());
+             sum.put(h.getItemCode(), current);
+          }
+          current.setMin(current.getMin() + h.getMin());
+          current.setCount(current.getCount() + h.getCount());
        }
+
+       List<ItemStatHolder> printSum = sum.values().stream().sorted(
+          (o1, o2) -> o2.getMin().compareTo(o1.getMin())).collect(Collectors.toList());
+
+       log.info(printSum.toString());
     }
 
  }
