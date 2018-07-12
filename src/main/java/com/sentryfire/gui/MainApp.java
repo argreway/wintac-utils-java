@@ -325,14 +325,41 @@ public class MainApp {
 		mnSchedule.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
 		mainMenuBar.add(mnSchedule);
 
-		JMenuItem mntmUpdateWoItems = new JMenuItem("Update WO Items");
+		JMenuItem mntmUpdateWohistory = new JMenuItem("Update History WO Counts");
+		mntmUpdateWohistory.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				eh.handleUpdateWoHistoryCount(e);
+			}
+		});
+		mntmUpdateWohistory.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
+		mnSchedule.add(mntmUpdateWohistory);
+
+		JMenuItem mntmUpdateWoItems = new JMenuItem("Update History ITEM");
 		mntmUpdateWoItems.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				eh.handleUpdateScheduleItems(e);
+				eh.handleUpdateHistoryItems(e);
 			}
 		});
 		mntmUpdateWoItems.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
 		mnSchedule.add(mntmUpdateWoItems);
+
+		JMenuItem mntmUpdateLaborEfficiency = new JMenuItem("Update Labor Efficiency");
+		mntmUpdateLaborEfficiency.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				eh.handleUpdateLaborEff(e);
+			}
+		});
+		mntmUpdateLaborEfficiency.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
+		mnSchedule.add(mntmUpdateLaborEfficiency);
+
+		JMenuItem mntmUpdateAllHistory = new JMenuItem("Update All History Stats");
+		mntmUpdateAllHistory.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				eh.handleUpdateAllHistoryStats(e);
+			}
+		});
+		mntmUpdateAllHistory.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
+		mnSchedule.add(mntmUpdateAllHistory);
 
 		JPanel pannelDB = new JPanel();
 		pannelDB.setBackground(Color.GRAY);

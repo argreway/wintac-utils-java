@@ -39,7 +39,10 @@ public interface EventHandler {
 	public void handleDropInfluxHistory(ActionEvent e);
 
 	// Schedule Menu
-	public void handleUpdateScheduleItems(ActionEvent e);
+	public void handleUpdateHistoryItems(ActionEvent e);
+	public void handleUpdateWoHistoryCount(ActionEvent e);
+	public void handleUpdateLaborEff(ActionEvent e);
+	public void handleUpdateAllHistoryStats(ActionEvent e);
 
 }
 

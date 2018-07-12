@@ -259,12 +259,38 @@
     }
 
     @Override
-    public void handleUpdateScheduleItems(ActionEvent e)
+    public void handleUpdateHistoryItems(ActionEvent e)
+    {
+       Runnable task = () -> {
+          HistoryDataUtils.updateHistoryWOAndItems();
+       };
+       executor.submit(task);
+    }
+
+    @Override
+    public void handleUpdateWoHistoryCount(ActionEvent e)
+    {
+       Runnable task = () -> {
+          HistoryDataUtils.updateWOCounts();
+       };
+       executor.submit(task);
+    }
+
+    @Override
+    public void handleUpdateLaborEff(ActionEvent e)
+    {
+       Runnable task = () -> {
+          HistoryDataUtils.updateLaborEfficency();
+       };
+       executor.submit(task);
+    }
+
+    @Override
+    public void handleUpdateAllHistoryStats(ActionEvent e)
     {
        Runnable task = () -> {
           HistoryDataUtils.insertAllHistoryStats();
        };
        executor.submit(task);
-
     }
  }

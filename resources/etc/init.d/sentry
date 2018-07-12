@@ -4,16 +4,15 @@
 # chkconfig: 35 90 2
 # description: Sentry service script
 
-serverLocation=/opt/sentry
+serverLocation=/opt/sentry/SentryMain
 serverBin=${serverLocation}/bin
 user=root
 
 source /etc/profile
 
 start() {
-        echo "Starting Sentry Server: "
         running=$(status)
-        if [[ ${running} != *not* ]]
+        if [[ ${running} != *NOT* ]]
         then
           echo "Sentry server is already running."
           return 0
