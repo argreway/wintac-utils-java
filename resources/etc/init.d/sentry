@@ -37,7 +37,7 @@ stop() {
 status() {
         pid=`ps -ef | grep java | grep SentryMain | grep -v grep | awk -F  " " '{print $2}'`
 
-        if [ ! -z ${pidNodeMgr} ]
+        if [ ! -z ${pid} ]
         then
           echo "Sentry Server running [$pid]"
           exit 1
