@@ -137,10 +137,10 @@
      * use this when you just want to get the list of WO with the items
      * populated in to them.  Note you must use the updateHistoryWOAndItems first.
      */
-    public List<WO> getWorkOrdersWithItems()
+    public List<WO> getWorkOrdersWithItems(DateTime start,
+                                           DateTime end)
     {
-       // TODO fix this
-       return getWorkOrdersWithItemsAndUpdate(null, null, false);
+       return getWorkOrdersWithItemsAndUpdate(start, end, false);
 
     }
 

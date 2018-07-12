@@ -11,6 +11,7 @@
 
  import java.util.List;
  import java.util.Map;
+ import java.util.Objects;
  import java.util.stream.Collectors;
 
  import com.google.common.collect.Lists;
@@ -62,7 +63,7 @@
                 // Create the points
                 Map<String, Object> fields = Maps.newHashMap();
                 fields.put("count", entry.getValue().size());
-                fields.put("jobs", entry.getValue().stream().sorted().collect(Collectors.joining(",")));
+                fields.put("jobs", entry.getValue().stream().filter(Objects::nonNull).sorted().collect(Collectors.joining(",")));
 
                 Map<String, String> tags = Maps.newHashMap();
                 tags.put("year", year);

@@ -58,6 +58,12 @@
     protected String MATC;
     @Column (name = "RCVNKey")
     protected String RCVNKey;
+    @Column (name = "CITY")
+    protected String CITY;
+    @Column (name = "STATE")
+    protected String STATE;
+    @Column (name = "ZIP")
+    protected String ZIP;
 
     protected List<Item> lineItems;
 
@@ -272,6 +278,36 @@
        this.lineItems = lineItems;
     }
 
+    public String getCITY()
+    {
+       return CITY;
+    }
+
+    public void setCITY(String CITY)
+    {
+       this.CITY = CITY;
+    }
+
+    public String getSTATE()
+    {
+       return STATE;
+    }
+
+    public void setSTATE(String STATE)
+    {
+       this.STATE = STATE;
+    }
+
+    public String getZIP()
+    {
+       return ZIP;
+    }
+
+    public void setZIP(String ZIP)
+    {
+       this.ZIP = ZIP;
+    }
+
     @Override
     public String toString()
     {
@@ -296,6 +332,9 @@
               ", MAT='" + MAT + '\'' +
               ", MATC='" + MATC + '\'' +
               ", RCVNKey='" + RCVNKey + '\'' +
+              ", CITY='" + CITY + '\'' +
+              ", STATE='" + STATE + '\'' +
+              ", ZIP='" + ZIP + '\'' +
               ", lineItems=" + lineItems +
               '}';
     }

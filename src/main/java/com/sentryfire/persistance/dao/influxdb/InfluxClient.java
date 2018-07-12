@@ -112,7 +112,11 @@
     //////////
 
     static int count = 0;
-    static Random random = new Random();
+
+    static Random randomHr = new Random();
+    static Random randomMin = new Random();
+    static Random randomSec = new Random();
+    static Random randomMilli = new Random();
 
     public static Point buildPoint(String measurement,
                                    Map<String, Object> fields,
@@ -122,14 +126,14 @@
        Point.Builder builder = Point.measurement(measurement);
        if (timestamp != null)
        {
-          int milliRotate = random.nextInt(999);
-          int minRotate = random.nextInt(59);
-          int secRotate = random.nextInt(59);
-
+          int milliRotate = randomMilli.nextInt(999);
+          int minRotate = randomMin.nextInt(59);
+          int secRotate = randomSec.nextInt(59);
+          int hrRotate = randomHr.nextInt(12) + 11;
 
           // Randomize the
           DateTime iTimeStamp = new DateTime(timestamp.getYear(), timestamp.getMonthOfYear(),
-                                             timestamp.getDayOfMonth(), timestamp.getHourOfDay(), minRotate, secRotate, milliRotate);
+                                             timestamp.getDayOfMonth(), hrRotate, minRotate, secRotate, milliRotate);
           builder.time(iTimeStamp.getMillis(), TimeUnit.MILLISECONDS);
 
           if (stampList.contains(iTimeStamp))
@@ -248,7 +252,7 @@
              }
              else if (tagColumns != null)
              {
-                // Everything else should be treated as a string value
+                //   Everything else should be treated as a string value
                 String tValue = rowVal.trim().replace(" ", "_");
                 if (tValue.endsWith(".0"))
                    tValue = tValue.substring(0, tValue.indexOf("."));
@@ -271,7 +275,7 @@
           }
           else
           {
-             log.error("No date column to generate timestamp! [" + dateColumn + "]");
+             log.error("No date column to generate timestamp! [" + dateColumn + "] ");
           }
 
           measurements.add(InfluxClient.buildPoint(measurement, fields, tags, timestamp));

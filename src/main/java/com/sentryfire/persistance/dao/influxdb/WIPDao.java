@@ -11,6 +11,7 @@
 
  import java.util.List;
 
+ import com.sentryfire.business.history.workorder.WOHistoryManager;
  import com.sentryfire.persistance.DAOFactory;
  import com.sentryfire.model.WO;
  import org.influxdb.dto.QueryResult;
@@ -25,6 +26,7 @@
 
     protected static final String ALL_WO = "SELECT * FROM WO";
     protected static final String ALL_INV = "SELECT * FROM INV";
+    protected WOHistoryManager woHistoryManager = new WOHistoryManager();
 
     public List<WO> getAllWorkOrders()
     {
@@ -36,7 +38,6 @@
        }
        catch (Exception e)
        {
-          e.printStackTrace();
           log.error("Failed to query influxdb for WO." + e);
        }
        return null;
@@ -62,7 +63,7 @@
     }
 
     public List<WO> getHistoryWorkOrdersByTime(DateTime start,
-                                        DateTime end)
+                                               DateTime end)
     {
        try
        {
@@ -74,8 +75,21 @@
        }
        catch (Exception e)
        {
-          e.printStackTrace();
           log.error("Failed to query influxdb for WO." + e);
+       }
+       return null;
+    }
+
+    public List<WO> getHistoryWOAndItems(DateTime start,
+                                         DateTime end)
+    {
+       try
+       {
+          return woHistoryManager.getWorkOrdersWithItems(start, end);
+       }
+       catch (Exception e)
+       {
+          log.error("Failed to get work orders with items inserted." + e);
        }
        return null;
     }
