@@ -25,6 +25,8 @@
     protected String month;
     @Column (name = "count")
     protected Integer count;
+    @Column (name = "jobs")
+    protected String jobs;
 
     public String getTime()
     {
@@ -66,6 +68,16 @@
        this.count = count;
     }
 
+    public String getJobs()
+    {
+       return jobs;
+    }
+
+    public void setJobs(String jobs)
+    {
+       this.jobs = jobs;
+    }
+
     @Override
     public String toString()
     {
@@ -74,6 +86,7 @@
               ", year='" + year + '\'' +
               ", month='" + month + '\'' +
               ", count=" + count +
+              ", jobs='" + jobs + '\'' +
               '}';
     }
  }

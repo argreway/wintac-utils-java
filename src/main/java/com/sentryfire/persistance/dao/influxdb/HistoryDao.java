@@ -11,6 +11,7 @@
 
  import java.util.List;
  import java.util.Map;
+ import java.util.stream.Collectors;
 
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
@@ -44,7 +45,7 @@
        }
     }
 
-    public void writeWOHistory(Map<String, Map<String, Integer>> workOrderList)
+    public void writeWOHistory(Map<String, Map<String, List<String>>> workOrderList)
     {
        try
        {
@@ -54,13 +55,14 @@
           for (String year : workOrderList.keySet())
           {
 
-             Map<String, Integer> monthCount = workOrderList.get(year);
+             Map<String, List<String>> monthCount = workOrderList.get(year);
 
-             for (Map.Entry<String, Integer> entry : monthCount.entrySet())
+             for (Map.Entry<String, List<String>> entry : monthCount.entrySet())
              {
                 // Create the points
                 Map<String, Object> fields = Maps.newHashMap();
-                fields.put("count", entry.getValue());
+                fields.put("count", entry.getValue().size());
+                fields.put("jobs", entry.getValue().stream().sorted().collect(Collectors.joining(",")));
 
                 Map<String, String> tags = Maps.newHashMap();
                 tags.put("year", year);

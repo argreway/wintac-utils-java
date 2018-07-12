@@ -15,6 +15,7 @@
 
  import javax.swing.table.DefaultTableModel;
 
+ import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
  import com.sentryfire.model.Item;
  import com.sentryfire.model.WO;
@@ -46,7 +47,7 @@
        terminate.addMonths(1);
        terminate.setDayOfMonth(15);
 
-       Map<String, Map<String, Integer>> yearToMonthToCount = Maps.newHashMap();
+       Map<String, Map<String, List<String>>> yearToMonthToCount = Maps.newHashMap();
 
        while (start.isBefore(terminate))
        {
@@ -59,21 +60,21 @@
           log.info("Updating history for  [" + start + "] to [" + end + "]");
           List<WO> result = DAOFactory.getWipDao().getWorkOrdersByTime(start.toDateTime(), end.toDateTime());
 
-          int size = 0;
+          List<String> jobs = Lists.newArrayList();
           if (result != null)
           {
              log.info("Found " + result.size());
-             size = result.size();
+             jobs = result.stream().map(WO::getIN2).collect(Collectors.toList());
           }
 
-          Map<String, Integer> monthCount = yearToMonthToCount.get("" + start.getYear());
-          if (monthCount == null)
+          Map<String, List<String>> monthJobs = yearToMonthToCount.get("" + start.getYear());
+          if (monthJobs == null)
           {
-             monthCount = Maps.newHashMap();
-             yearToMonthToCount.put("" + start.getYear(), monthCount);
+             monthJobs = Maps.newHashMap();
+             yearToMonthToCount.put("" + start.getYear(), monthJobs);
           }
-          monthCount.put("" + start.getMonthOfYear(), size);
-          yearToMonthToCount.put("" + start.getYear(), monthCount);
+          monthJobs.put("" + start.getMonthOfYear(), jobs);
+          yearToMonthToCount.put("" + start.getYear(), monthJobs);
 
           start.addMonths(1);
           end.addMonths(1);
