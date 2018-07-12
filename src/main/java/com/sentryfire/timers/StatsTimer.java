@@ -11,14 +11,13 @@
 
 
  import java.util.Timer;
- import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeUnit;
 
- import com.sentryfire.SentryConfiguartion;
- import com.sentryfire.persistance.DAOFactory;
- import org.joda.time.DateTimeZone;
- import org.joda.time.MutableDateTime;
- import org.slf4j.Logger;
- import org.slf4j.LoggerFactory;
+import com.sentryfire.SentryConfiguartion;
+import com.sentryfire.persistance.DAOFactory;
+import org.joda.time.MutableDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
  public class StatsTimer
  {
@@ -33,7 +32,7 @@
 
     public void startTimer()
     {
-       MutableDateTime next = new MutableDateTime(DateTimeZone.UTC);
+       MutableDateTime next = new MutableDateTime();
        next.addDays(1);
        next.setHourOfDay(3);
        next.setMinuteOfHour(0);
