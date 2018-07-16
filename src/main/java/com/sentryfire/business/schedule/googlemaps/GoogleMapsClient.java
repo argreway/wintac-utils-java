@@ -7,7 +7,7 @@
   *
   *-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
- package com.sentryfire.business.googlemaps;
+ package com.sentryfire.business.schedule.googlemaps;
 
  import java.util.Collection;
  import java.util.List;
@@ -23,6 +23,7 @@
  import com.google.maps.GeocodingApi;
  import com.google.maps.model.GeocodingResult;
  import com.sentryfire.SentryAppConfiguartion;
+ import com.sentryfire.SentryConfiguartion;
  import com.sentryfire.model.Item;
  import com.sentryfire.model.ItemStatHolder;
  import com.sentryfire.model.WO;
@@ -35,10 +36,8 @@
  public class GoogleMapsClient
  {
     Logger log = LoggerFactory.getLogger(getClass());
-    // sentryfirescheduler
-    private static final String API_KEY = "AIzaSyCYmecgTNytV9Z-Z8IOB86cCWwapJGeCj0";
 
-    public void route()
+    public List<WO> route()
     {
        List<WO> result = getWorkOrderList();
 
@@ -64,6 +63,7 @@
        System.out.println("done");
 //       map();
 
+       return cosprings;
     }
 
     private void calculateWorkload(List<WO> list)
@@ -141,7 +141,7 @@
        try
        {
           GeoApiContext context = new GeoApiContext.Builder()
-             .apiKey(API_KEY).build();
+             .apiKey(SentryConfiguartion.getInstance().getGoogleMapApiKey()).build();
           //           PlacesApi.nearbySearchNextPage();
           //
           GeocodingResult[] results = GeocodingApi.geocode(
@@ -158,7 +158,7 @@
 
     }
 
-    protected List<WO> getWorkOrderList()
+    public List<WO> getWorkOrderList()
     {
        MutableDateTime start = new MutableDateTime();
        start.setYear(2018);

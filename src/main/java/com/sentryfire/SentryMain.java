@@ -11,10 +11,13 @@
 
  import java.util.Arrays;
  import java.util.List;
+ import java.util.stream.Collectors;
 
  import com.google.common.collect.Lists;
- import com.sentryfire.business.googlemaps.GoogleMapsClient;
+ import com.sentryfire.business.schedule.googlecalendar.CalendarManager;
+ import com.sentryfire.business.schedule.googlemaps.GoogleMapsClient;
  import com.sentryfire.gui.GUIManager;
+ import com.sentryfire.model.WO;
  import com.sentryfire.persistance.DAOFactory;
  import com.sentryfire.timers.StatsTimer;
  import org.slf4j.Logger;
@@ -28,24 +31,26 @@
 
     protected static StatsTimer timer;
 
-        public static void main(String[] args)
+    public static void main(String[] args)
 //    public static void test(String[] args)
     {
-       SentryAppConfiguartion.getInstance();
-       DAOFactory.sqlDB().connectToDB(
-          SentryConfiguartion.getInstance().getServer(),
-          SentryConfiguartion.getInstance().getDatabase(),
-          SentryConfiguartion.getInstance().getUser(),
-          SentryConfiguartion.getInstance().getPassword());
+       try
+       {
+          SentryAppConfiguartion.getInstance();
+          DAOFactory.sqlDB().connectToDB(
+             SentryConfiguartion.getInstance().getServer(),
+             SentryConfiguartion.getInstance().getDatabase(),
+             SentryConfiguartion.getInstance().getUser(),
+             SentryConfiguartion.getInstance().getPassword());
 
-       // Robo Dialer
+          // Robo Dialer
 //       DailerManager manager = new DailerManager();
 //       manager.start();
 //       TwilioDailer twilioDailer = new TwilioDailer();
 //       twilioDailer.sendCall();
 
 
-       // Excel Spread Sheet Test
+          // Excel Spread Sheet Test
 //       List<AccountRecievable> result = DAOFactory.getArDao().getFilteredARRecordsOlderThan2Years();
 //       List<List<Object>> rows = Lists.newArrayList();
 //       List<String> columns = result.get(0).getColumnNames();
@@ -54,19 +59,31 @@
 //       excelWritter.writeSpreadSheet(columns, rows);
 
 
-       // Labor Effeciencies
+          // Labor Effeciencies
 //       QueryAggregator aggregator = new QueryAggregator();
 //       aggregator.laborEfficencyRatiosYearly();
 
-       // Google Maps stuff
-       GoogleMapsClient googleMapsClient = new GoogleMapsClient();
-       googleMapsClient.route();
+          // Google Maps stuff
+          GoogleMapsClient googleMapsClient = new GoogleMapsClient();
+          List<WO> woMetaList = googleMapsClient.route();
+
+          CalendarManager calendarManager = new CalendarManager();
+//       calendarManager.bulkUpdateWorkOrders(null);
+          woMetaList = woMetaList.stream().limit(10).collect(Collectors.toList());
+          calendarManager.bulkUpdateWorkOrders(woMetaList);
+//          calendarManager.deleteAllEvents();
 
 //       WOHistoryManager woHistory = new WOHistoryManager();
 //       woHistory.updateMonthlyWOCount();
+          DAOFactory.shutdown();
+       }
+       catch (Exception e)
+       {
+          log.error("Failed to run main scheduling app ", e);
+       }
     }
 
-        public static void test2(String[] args)
+    public static void test2(String[] args)
 //    public static void main(String[] args)
     {
        log.info("CLI Args " + Arrays.toString(args));

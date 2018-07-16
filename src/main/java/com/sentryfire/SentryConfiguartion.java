@@ -46,6 +46,8 @@
     protected static final String USER = "user";
     protected static final String PASSWORD = "password";
 
+    protected static final String GOOGLE_MAP_API_KEY = "googleApiKey";
+
     //*******************//
     // Constructors
     //*******************//
@@ -114,6 +116,12 @@
     {
        return getString(PASSWORD, "");
     }
+
+    public String getGoogleMapApiKey()
+    {
+       return getString(GOOGLE_MAP_API_KEY, "");
+    }
+
 
     //*******************//
     // Protected Utils

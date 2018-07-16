@@ -45,6 +45,11 @@
 
     protected static final String ITEMS_TIME_MINS = "itemsTimeMin";
     protected static final String DRIVE_TIME = "driveTime";
+    protected static final String LUNCH_TIME = "lunchTime";
+    protected static final String BEGIN_TIME_MIN = "beginTimeMin";
+    protected static final String BEGIN_TIME_HR = "beginTimeHr";
+    protected static final String END_TIME_HR = "endTimeHr";
+    protected static final String CAL_REMINDER_MIN = "calReminderMins";
 
     //*******************//
     // Constructors
@@ -99,7 +104,37 @@
     //*******************//
     public Integer getDriveTime()
     {
-       String val = getString(DRIVE_TIME, "30");
+       String val = getString(DRIVE_TIME, "45");
+       return Integer.parseInt(val);
+    }
+
+    public Integer getLunchTime()
+    {
+       String val = getString(LUNCH_TIME, "30");
+       return Integer.parseInt(val);
+    }
+
+    public Integer getBeginDayHour()
+    {
+       String val = getString(BEGIN_TIME_HR, "7");
+       return Integer.parseInt(val);
+    }
+
+    public Integer getBeginDayMin()
+    {
+       String val = getString(BEGIN_TIME_MIN, "30");
+       return Integer.parseInt(val);
+    }
+
+    public Integer getEndDayHour()
+    {
+       String val = getString(END_TIME_HR, "16");
+       return Integer.parseInt(val);
+    }
+
+    public Integer getCalReminderMin()
+    {
+       String val = getString(CAL_REMINDER_MIN, "30");
        return Integer.parseInt(val);
     }
 

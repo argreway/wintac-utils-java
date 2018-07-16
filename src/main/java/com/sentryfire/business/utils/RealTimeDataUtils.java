@@ -11,6 +11,7 @@
 
  import javax.swing.table.DefaultTableModel;
 
+import com.sentryfire.SentryConfiguartion;
 import com.sentryfire.persistance.DAOFactory;
 import com.sentryfire.persistance.dao.influxdb.InfluxClient;
 import org.joda.time.DateTime;
@@ -44,6 +45,13 @@ import org.slf4j.LoggerFactory;
     {
        String message = "Inserting all stats from " + start + " to " + end;
        log.info(message);
+
+       DAOFactory.sqlDB().closeDBConnection();
+       DAOFactory.sqlDB().connectToDB(
+          SentryConfiguartion.getInstance().getServer(),
+          SentryConfiguartion.getInstance().getDatabase(),
+          SentryConfiguartion.getInstance().getUser(),
+          SentryConfiguartion.getInstance().getPassword());
 
        DAOFactory.getInfluxClient().dropDataBase();
        DAOFactory.getInfluxClient().createDataBase();
