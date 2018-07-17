@@ -63,7 +63,7 @@
        System.out.println("done");
 //       map();
 
-       return cosprings;
+       return result;
     }
 
     private void calculateWorkload(List<WO> list)

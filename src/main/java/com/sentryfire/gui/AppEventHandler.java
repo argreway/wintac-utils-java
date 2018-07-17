@@ -293,4 +293,45 @@
        };
        executor.submit(task);
     }
+
+    @Override
+    public void handleLoadActivityLog(ActionEvent e)
+    {
+       Runnable task = () -> {
+//          String value = GUIManager.getDatePanel().datePicker.getFormattedTextField().getText();
+//          String value2 = GUIManager.getDatePanel().datePicker_1.getFormattedTextField().getText();
+          MutableDateTime start = new MutableDateTime();
+          start.setYear(2018);
+          start.setDayOfMonth(1);
+          start.setMonthOfYear(4);
+          start.setHourOfDay(0);
+
+          MutableDateTime end = new MutableDateTime(start);
+          end.setDayOfMonth(2);
+          end.setMonthOfYear(5);
+          start.setHourOfDay(23);
+
+          DefaultTableModel model = DAOFactory.sqlDB().getUserActivityLog(start.toDateTime(), end.toDateTime());
+          window.table.setModel(model);
+          window.table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+       };
+       executor.submit(task);
+    }
+
+    @Override
+    public void showCalendar(ActionEvent e)
+    {
+       GUIManager.showDateWindow(true);
+    }
+
+    @Override
+    public void handleCalendarContinue(ActionEvent e)
+    {
+       GUIManager.showDateWindow(true);
+       String value = GUIManager.getDatePanel().datePicker.getFormattedTextField().getText();
+       String value2 = GUIManager.getDatePanel().datePicker_1.getFormattedTextField().getText();
+       log.info("Found " + value + ": " + value2);
+       GUIManager.showDateWindow(false);
+       handleLoadActivityLog(e);
+    }
  }

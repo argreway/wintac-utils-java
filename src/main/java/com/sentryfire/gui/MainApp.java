@@ -361,6 +361,19 @@ public class MainApp {
 		mntmUpdateAllHistory.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
 		mnSchedule.add(mntmUpdateAllHistory);
 
+		JMenu mnActivityLog = new JMenu("Activity Log");
+		mnActivityLog.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
+		mainMenuBar.add(mnActivityLog);
+
+		JMenuItem mntmLoadActivityLog = new JMenuItem("Load Activity Log");
+		mntmLoadActivityLog.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				eh.handleLoadActivityLog(e);
+			}
+		});
+		mntmLoadActivityLog.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
+		mnActivityLog.add(mntmLoadActivityLog);
+
 		JPanel pannelDB = new JPanel();
 		pannelDB.setBackground(Color.GRAY);
 		GridBagConstraints gbc_pannelDB = new GridBagConstraints();

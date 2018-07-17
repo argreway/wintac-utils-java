@@ -11,15 +11,103 @@
 
  import java.util.Arrays;
  import java.util.List;
+ import java.util.Map;
  import java.util.stream.Collectors;
 
+ import javax.swing.table.DefaultTableModel;
+
  import com.google.common.collect.Lists;
- import com.sentryfire.persistance.DAOFactory;
+ import com.google.common.collect.Maps;
+ import com.sentryfire.model.ActivityLog;
  import com.sentryfire.model.Item;
+ import com.sentryfire.model.PojoConverterUtil;
+ import com.sentryfire.persistance.DAOFactory;
  import org.joda.time.MutableDateTime;
 
  public class BalanceFinder
  {
+
+    public static void searchHistoryForIncorrectDate()
+    {
+       MutableDateTime start = new MutableDateTime();
+       start.setYear(2018);
+       start.setMonthOfYear(4);
+       start.setDayOfMonth(1);
+       start.setHourOfDay(0);
+
+       MutableDateTime end = new MutableDateTime(start);
+       end.setYear(2018);
+       end.setMonthOfYear(5);
+       end.setDayOfMonth(2);
+       end.setHourOfDay(23);
+
+       DefaultTableModel model = DAOFactory.sqlDB().getUserActivityLog(start.toDateTime(), end.toDateTime());
+
+       List<ActivityLog> logs = PojoConverterUtil.convertTableToLog(model);
+
+       List<ActivityLog> invLogs = logs.stream().filter(l -> l.getAction().contains("Invoice")).collect(Collectors.toList());
+
+       Map<String, List<ActivityLog>> cnToIn = Maps.newHashMap();
+       for (ActivityLog aLog : invLogs)
+       {
+          String str = aLog.getAction();
+          str = str.substring(str.lastIndexOf("Invoice")).trim();
+          str = str.substring(str.indexOf(" ")).trim();
+          String[] ary = str.split("-");
+
+          String cn = ary[0].trim();
+          String[] ary2 = cn.split(" ");
+          if (ary2.length > 1)
+             cn = ary2[ary2.length - 1];
+          String in = ary[1].trim();
+
+          aLog.setCn(cn);
+          aLog.setIn(in);
+
+          List<ActivityLog> current = cnToIn.get(cn + ":" + in);
+          if (current == null)
+          {
+             current = Lists.newArrayList();
+             cnToIn.put(cn + ":" + in, current);
+          }
+          current.add(aLog);
+       }
+
+
+       for (Map.Entry<String, List<ActivityLog>> entry : cnToIn.entrySet())
+       {
+          String[] ary = entry.getKey().split(":");
+          String cn = ary[0];
+          String in = ary[1];
+
+          DefaultTableModel dt = DAOFactory.sqlDB().getAllRCVValues(cn, in);
+          if (dt.getRowCount() == 0)
+             System.err.println("Entry no longer exists: " + cn + " " + in);
+          else
+          {
+             for (ActivityLog aLog : entry.getValue())
+             {
+                aLog.setInvDate(PojoConverterUtil.getValueFromTable(dt, "INVDATE"));
+                aLog.setjDate(PojoConverterUtil.getValueFromTable(dt, "JDATE"));
+                aLog.setdDate(PojoConverterUtil.getValueFromTable(dt, "DDATE"));
+             }
+          }
+       }
+
+       List<ActivityLog> badActivities = Lists.newArrayList();
+       for (ActivityLog aLog : invLogs)
+       {
+          if (aLog.getInvDate() != null)
+          {
+             if (!aLog.getInvDate().stream().filter(s -> s.contains("2017")).collect(Collectors.toList()).isEmpty())
+             {
+                badActivities.add(aLog);
+             }
+          }
+       }
+
+       badActivities.forEach(s -> System.out.println(s.getDate() + " : " + s.getAction() + "     ->      " + s.getInvDate()));
+    }
 
     public void findGLDiff()
     {

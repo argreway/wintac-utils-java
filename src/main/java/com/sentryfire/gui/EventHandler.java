@@ -8,6 +8,10 @@ public interface EventHandler {
 	public void handleInit(ComponentEvent ce);
 	public void setMainApp(MainApp window);
 
+	// Calendar
+	public void showCalendar(ActionEvent e);
+	public void handleCalendarContinue(ActionEvent e);
+
 	// DB Menu
 	public void handleConnectDB(ActionEvent e);
 	public void handleDisconnectDB(ActionEvent e);
@@ -43,6 +47,9 @@ public interface EventHandler {
 	public void handleUpdateWoHistoryCount(ActionEvent e);
 	public void handleUpdateLaborEff(ActionEvent e);
 	public void handleUpdateAllHistoryStats(ActionEvent e);
+
+	// Activity Log
+	public void handleLoadActivityLog(ActionEvent e);
 
 }
 

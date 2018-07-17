@@ -1,5 +1,4 @@
- /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-  * Author:    Tony Greway
+ /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= * Author:    Tony Greway
   * File:      CalendarManager.java
   * Created:   7/13/18
   *
@@ -15,6 +14,8 @@
  import java.io.InputStreamReader;
  import java.util.Collections;
  import java.util.List;
+ import java.util.Map;
+ import java.util.stream.Collectors;
 
  import com.google.api.client.auth.oauth2.Credential;
  import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -30,10 +31,11 @@
  import com.google.api.client.util.store.FileDataStoreFactory;
  import com.google.api.services.calendar.Calendar;
  import com.google.api.services.calendar.CalendarScopes;
+ import com.google.api.services.calendar.model.CalendarList;
+ import com.google.api.services.calendar.model.CalendarListEntry;
  import com.google.api.services.calendar.model.Event;
  import com.google.api.services.calendar.model.Events;
- import com.sentryfire.business.schedule.SchedulerBuilder;
- import com.sentryfire.model.WO;
+ import com.google.common.collect.Maps;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -46,41 +48,56 @@
     private static final String CREDENTIALS_FOLDER = "/tmp/credentials"; // Directory to store user credentials.
 
     private static final List<String> SCOPES = Collections.singletonList(CalendarScopes.CALENDAR);
-    private static final String CLIENT_SECRET_FILE = "client_secret.json";
+        private static final String CLIENT_SECRET_FILE = "client_secret.json";
+//    private static final String CLIENT_SECRET_FILE = "my-project-delegation-service-account.json";
 
-    private String CAL_NAME = "primary";
+    public static String CAL_NAME_PRIMARY = "primary";
 
+    public static String CAL_NAME_FIP = "FIP";
+    public static String CAL_NAME_GREELEY = "GREELEY";
+    public static String CAL_NAME_DENVER = "DENVER";
 
-    protected Calendar service;
-    protected SchedulerBuilder schedulerBuilder = new SchedulerBuilder();
+    protected static Map<String, String> calendarNameToID = Maps.newHashMap();
 
-    public CalendarManager()
+    protected static CalendarManager instance;
+
+    protected static Calendar service;
+
+    public static synchronized CalendarManager getInstance()
     {
-       log.info("Connecting to google calendar.");
-       connect();
+       if (instance == null)
+       {
+          instance = new CalendarManager();
+          instance.connect();
+          instance.buildCalendarNameMap();
+       }
+       return instance;
     }
 
-    public void bulkUpdateWorkOrders(List<WO> woList)
+    private CalendarManager()
+    {
+    }
+
+    public void bulkAddEvents(List<Event> events,
+                              String calName)
     {
        try
        {
 
-          List<Event> events = schedulerBuilder.buildSchedule(woList);
-
           BatchRequest batch = service.batch();
-          for (Event e : events)
+          for (Event e : events.stream().limit(1).collect(Collectors.toList()))
+//             for (Event e : events)
           {
              try
              {
-                service.events().insert(CAL_NAME, e).queue(batch, new EventCallBack());
+                service.events().insert(getCalID(calName), e).queue(batch, new EventCallBack());
              }
              catch (Exception ex)
              {
                 log.error("Failed to submit event " + e.getId() + ", due to: ", e);
              }
           }
-
-//          batch.execute();
+          batch.execute();
        }
        catch (Exception e)
        {
@@ -99,29 +116,41 @@
 
     }
 
-    public void deleteEvent(String eventID) throws Exception
+    public void deleteEvent(String eventID,
+                            String calName) throws Exception
     {
-       service.events().delete(CAL_NAME, eventID).execute();
+       service.events().delete(getCalID(calName), eventID).execute();
     }
 
-    public void deleteAllEvents() throws Exception
+    public CalendarList listCalendars() throws Exception
     {
-       Events eventList = service.events().list(CAL_NAME).execute();
+       return service.calendarList().list().execute();
+    }
+
+    public Events listEvents(String calName) throws Exception
+    {
+       return service.events().list(getCalID(calName)).execute();
+    }
+
+    public void deleteAllEvents(String calName) throws Exception
+    {
+       Events eventList = service.events().list(getCalID(calName)).execute();
 
        BatchRequest batch = service.batch();
        for (Event e : eventList.getItems())
        {
           System.out.println("Deleting Event " + e.getId());
-          service.events().delete(CAL_NAME, e.getId()).queue(batch, new VoidCallBack());
+          service.events().delete(getCalID(calName), e.getId()).queue(batch, new VoidCallBack());
        }
        batch.execute();
     }
 
-    public void addEvent(Event event)
+    public void addEvent(Event event,
+                         String calName)
     {
        try
        {
-          event = service.events().insert(CAL_NAME, event).execute();
+          event = service.events().insert(getCalID(calName), event).execute();
           System.out.printf("Event created: %s\n", event.getHtmlLink());
        }
        catch (Exception e)
@@ -141,6 +170,7 @@
           final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
 
           service = new Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, getUserOauthCredentials(HTTP_TRANSPORT))
+//          service = new Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, getServiceAccountCredentials(HTTP_TRANSPORT))
              .setApplicationName(APPLICATION_NAME).build();
        }
        catch (Exception e)
@@ -149,25 +179,57 @@
        }
     }
 
+    private String getCalID(String calName)
+    {
+       return calendarNameToID.get(calName);
+    }
+
+    private void buildCalendarNameMap()
+    {
+       try
+       {
+          CalendarList list = listCalendars();
+
+          for (CalendarListEntry entry : list.getItems())
+          {
+             if (CAL_NAME_FIP.equals(entry.getSummary()))
+                calendarNameToID.put(CAL_NAME_FIP, entry.getId());
+             else if (CAL_NAME_GREELEY.equals(entry.getSummary()))
+                calendarNameToID.put(CAL_NAME_GREELEY, entry.getId());
+             else if (CAL_NAME_DENVER.equals(entry.getSummary()))
+                calendarNameToID.put(CAL_NAME_DENVER, entry.getId());
+          }
+          log.info("Mapped the following calendars to IDs: " + calendarNameToID);
+       }
+       catch (Exception e)
+       {
+          log.error("Failed to initialize the calendar list ", e);
+       }
+    }
+
     private static Credential getServiceAccountCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException
     {
-       //          GoogleCredential cr = GoogleCredential
-       //             .fromStream(getClass().getClassLoader().getResourceAsStream(CLIENT_SECRET_FILE))
-       //             .createScoped(SCOPES);
-       //          GoogleCredential.Builder builder = new GoogleCredential.Builder()
-       //             .setTransport(HTTP_TRANSPORT)
-       //             .setJsonFactory(JSON_FACTORY)
-       //             .setServiceAccountScopes(SCOPES)
-       //             .setServiceAccountId(cr.getServiceAccountId())
-       //             .setServiceAccountPrivateKey(cr.getServiceAccountPrivateKey())
-       //             .setServiceAccountPrivateKeyId(cr.getServiceAccountPrivateKeyId())
-       //             .setTokenServerEncodedUrl(cr.getTokenServerEncodedUrl())
-       //             .setServiceAccountUser("749725681897-jlg6po2hvl71e8lvtchno3h0r6qn0nvj.apps.googleusercontent.com");
-
-       //          GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream("MyProject-1234.json"))
-       GoogleCredential credential = GoogleCredential.fromStream(CalendarManager.class.getClassLoader().getResourceAsStream(CLIENT_SECRET_FILE))
+       GoogleCredential cr = GoogleCredential
+          .fromStream(CalendarManager.class.getClassLoader().getResourceAsStream(CLIENT_SECRET_FILE))
           .createScoped(SCOPES);
-       return credential;
+       GoogleCredential.Builder builder = new GoogleCredential.Builder()
+          .setTransport(HTTP_TRANSPORT)
+          .setJsonFactory(JSON_FACTORY)
+          .setServiceAccountScopes(SCOPES)
+          .setServiceAccountId(cr.getServiceAccountId())
+          .setServiceAccountPrivateKey(cr.getServiceAccountPrivateKey())
+          .setServiceAccountPrivateKeyId(cr.getServiceAccountPrivateKeyId())
+          .setTokenServerEncodedUrl(cr.getTokenServerEncodedUrl())
+//          .setServiceAccountUser("749725681897-jlg6po2hvl71e8lvtchno3h0r6qn0nvj.apps.googleusercontent.com")
+          .setServiceAccountUser("sentryfirescheduler@gmail.com")
+          .setClientSecrets("749725681897-jlg6po2hvl71e8lvtchno3h0r6qn0nvj.apps.googleusercontent.com", "y23iPYVUd2VDSxysVnLSxO4q");
+
+//                 GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream("MyProject-1234.json"))
+//       GoogleCredential credential = GoogleCredential.fromStream(CalendarManager.class.getClassLoader().getResourceAsStream(CLIENT_SECRET_FILE))
+//          .createScoped(SCOPES);
+//       return credential;
+
+       return builder.build();
 
     }
 

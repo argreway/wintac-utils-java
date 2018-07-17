@@ -10,18 +10,15 @@
  package com.sentryfire;
 
  import java.util.Arrays;
- import java.util.List;
- import java.util.stream.Collectors;
+import java.util.List;
 
- import com.google.common.collect.Lists;
- import com.sentryfire.business.schedule.googlecalendar.CalendarManager;
- import com.sentryfire.business.schedule.googlemaps.GoogleMapsClient;
+import com.google.common.collect.Lists;
+ import com.sentryfire.business.utils.BalanceFinder;
  import com.sentryfire.gui.GUIManager;
- import com.sentryfire.model.WO;
- import com.sentryfire.persistance.DAOFactory;
- import com.sentryfire.timers.StatsTimer;
- import org.slf4j.Logger;
- import org.slf4j.LoggerFactory;
+import com.sentryfire.persistance.DAOFactory;
+import com.sentryfire.timers.StatsTimer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
  public class SentryMain
  {
@@ -31,8 +28,8 @@
 
     protected static StatsTimer timer;
 
-    public static void main(String[] args)
-//    public static void test(String[] args)
+//    public static void main(String[] args)
+    public static void test(String[] args)
     {
        try
        {
@@ -49,7 +46,6 @@
 //       TwilioDailer twilioDailer = new TwilioDailer();
 //       twilioDailer.sendCall();
 
-
           // Excel Spread Sheet Test
 //       List<AccountRecievable> result = DAOFactory.getArDao().getFilteredARRecordsOlderThan2Years();
 //       List<List<Object>> rows = Lists.newArrayList();
@@ -59,22 +55,14 @@
 //       excelWritter.writeSpreadSheet(columns, rows);
 
 
-          // Labor Effeciencies
-//       QueryAggregator aggregator = new QueryAggregator();
-//       aggregator.laborEfficencyRatiosYearly();
+//          CalendarManager.getInstance().deleteAllEvents(CalendarManager.CAL_NAME_FIP);
+//          CalendarManager.getInstance().listCalendars();
 
-          // Google Maps stuff
-          GoogleMapsClient googleMapsClient = new GoogleMapsClient();
-          List<WO> woMetaList = googleMapsClient.route();
+//          SchedulerBuilder schedulerBuilder = new SchedulerBuilder();
+//          schedulerBuilder.buildAndInsertAllSchedules();
 
-          CalendarManager calendarManager = new CalendarManager();
-//       calendarManager.bulkUpdateWorkOrders(null);
-          woMetaList = woMetaList.stream().limit(10).collect(Collectors.toList());
-          calendarManager.bulkUpdateWorkOrders(woMetaList);
-//          calendarManager.deleteAllEvents();
+          BalanceFinder.searchHistoryForIncorrectDate();
 
-//       WOHistoryManager woHistory = new WOHistoryManager();
-//       woHistory.updateMonthlyWOCount();
           DAOFactory.shutdown();
        }
        catch (Exception e)
@@ -83,8 +71,8 @@
        }
     }
 
-    public static void test2(String[] args)
-//    public static void main(String[] args)
+//    public static void test2(String[] args)
+    public static void main(String[] args)
     {
        log.info("CLI Args " + Arrays.toString(args));
 

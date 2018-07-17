@@ -33,6 +33,16 @@
        guiThread.getWindow().logMessage("ERROR: " + message);
     }
 
+    public static void showDateWindow(boolean show)
+    {
+       guiThread.getDatePanel().frame.setVisible(show);
+    }
+
+    public static DatePanel getDatePanel()
+    {
+       return guiThread.getDatePanel();
+    }
+
     public static boolean isGUI()
     {
        return isGUI;

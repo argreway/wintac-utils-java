@@ -93,6 +93,15 @@
        return getDataTable(selectString);
     }
 
+    public DefaultTableModel getUserActivityLog(DateTime start,
+                                                DateTime end)
+    {
+       String selectString = "select * from LOG  WHERE " +
+                             "(LOG.DATE >= { d '" + formatter.print(start) + "'} ) AND (LOG.DATE <= { d '" + formatter.print(end) + "'} )";
+       return getDataTable(selectString);
+    }
+
+
     public DefaultTableModel getItemsForWorkOrder(DateTime start,
                                                   DateTime end)
     {
@@ -223,6 +232,13 @@
        return getDataTable(selectString);
     }
 
+    public DefaultTableModel getAllRCVValues(String cn,
+                                             String in)
+    {
+       String selectString = "SELECT * FROM RCV WHERE cn = " + cn + " AND [in] = " + in;
+       return getDataTable(selectString);
+    }
+
     public DefaultTableModel getARDataTable(DateTime end)
     {
        String selectString =
@@ -251,13 +267,13 @@
     {
        try
        {
-          log.info("GetDataTable selectString: " + selectString);
+          log.debug("GetDataTable selectString: " + selectString);
           Statement stmt = cnn.createStatement();
           ResultSet rs = stmt.executeQuery(selectString);
           DefaultTableModel dataTable = buildTableModel(rs);
 
 
-          log.info("Found: " + dataTable.getRowCount());
+          log.debug("Found: " + dataTable.getRowCount());
 
           return dataTable;
        }
