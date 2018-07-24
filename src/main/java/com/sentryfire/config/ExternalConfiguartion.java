@@ -1,35 +1,27 @@
  /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   * Author:    Tony Greway
-  * File:      SentryConfiguartion.java
+  * File:      ExternalConfiguartion.java
   * Created:   6/1/18
   *
   * Description:
   *
   *-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-*/
 
- package com.sentryfire;
+ package com.sentryfire.config;
 
  import java.io.FileInputStream;
- import java.io.FileNotFoundException;
- import java.io.FileOutputStream;
- import java.io.IOException;
- import java.io.OutputStream;
- import java.util.List;
- import java.util.Properties;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.List;
+import java.util.Properties;
 
- import com.google.common.collect.Lists;
- import org.slf4j.Logger;
- import org.slf4j.LoggerFactory;
+import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
- public class SentryConfiguartion
+ public class ExternalConfiguartion extends BaseConfiguration
  {
-    Logger log = LoggerFactory.getLogger(SentryConfiguartion.class);
-
-    //*******************//
-    // Local
-    //*******************//
-    private String fileName;
-    protected Properties properties;
+    Logger log = LoggerFactory.getLogger(ExternalConfiguartion.class);
 
     //*******************//
     // File Location
@@ -51,18 +43,18 @@
     //*******************//
     // Constructors
     //*******************//
-    private static SentryConfiguartion instance;
+    private static ExternalConfiguartion instance;
 
-    public static SentryConfiguartion getInstance()
+    public static ExternalConfiguartion getInstance()
     {
        if (instance == null)
        {
-          instance = new SentryConfiguartion(CONFIG_FILE);
+          instance = new ExternalConfiguartion(CONFIG_FILE);
        }
        return instance;
     }
 
-    public SentryConfiguartion() throws FileNotFoundException, IOException
+    public ExternalConfiguartion() throws FileNotFoundException, IOException
     {
        this.fileName = CONFIG_FILE;
        properties = new Properties();
@@ -70,7 +62,7 @@
        properties.load(input);
     }
 
-    public SentryConfiguartion(final String fileName)
+    public ExternalConfiguartion(final String fileName)
     {
        this.fileName = fileName;
 
@@ -120,43 +112,6 @@
     public String getGoogleMapApiKey()
     {
        return getString(GOOGLE_MAP_API_KEY, "");
-    }
-
-
-    //*******************//
-    // Protected Utils
-    //*******************//
-
-    public void rewriteProperyFile() throws IOException
-    {
-       if (fileName == null)
-       {
-          return;
-       }
-       OutputStream out = new FileOutputStream(fileName);
-       properties.store(out, "vim configuration file");
-    }
-
-    public String getString(final String property)
-    {
-       return this.properties.getProperty(property);
-    }
-
-    public String getString(final String property,
-                            final String defaultStr)
-    {
-       return this.properties.getProperty(property, defaultStr);
-    }
-
-    public List<String> getStringList(final String property,
-                                      final List<String> defaultStrList)
-    {
-       String prop = this.properties.getProperty(property, null);
-       if (prop == null)
-       {
-          return defaultStrList;
-       }
-       return Lists.newArrayList(prop.split(","));
     }
 
  }

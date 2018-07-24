@@ -12,7 +12,7 @@
  import java.util.List;
 
  import com.google.common.collect.Lists;
- import com.sentryfire.SentryConfiguartion;
+ import com.sentryfire.config.ExternalConfiguartion;
  import com.sentryfire.persistance.DAOFactory;
  import com.sentryfire.model.AccountRecievable;
  import org.influxdb.dto.QueryResult;
@@ -62,13 +62,13 @@
     {
        List<AccountRecievable> fullList = getARRecordsOlderThan2Years();
 
-       log.info("Exclusion List: " + SentryConfiguartion.getInstance().getExclusionList());
+       log.info("Exclusion List: " + ExternalConfiguartion.getInstance().getExclusionList());
        List<AccountRecievable> result = Lists.newArrayList();
 
        for (AccountRecievable ar : fullList)
        {
 
-          for (String exclusion : SentryConfiguartion.getInstance().getExclusionList())
+          for (String exclusion : ExternalConfiguartion.getInstance().getExclusionList())
           {
              if (exclusion.equals(ar.getCN()))
                 log.info("Filtering: " + ar);

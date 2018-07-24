@@ -22,13 +22,15 @@
  import com.google.maps.GeoApiContext;
  import com.google.maps.GeocodingApi;
  import com.google.maps.model.GeocodingResult;
- import com.sentryfire.SentryAppConfiguartion;
- import com.sentryfire.SentryConfiguartion;
+ import com.sentryfire.config.AppConfiguartion;
+ import com.sentryfire.config.ExternalConfiguartion;
  import com.sentryfire.model.Item;
  import com.sentryfire.model.ItemStatHolder;
+ import com.sentryfire.model.SKILL;
  import com.sentryfire.model.WO;
  import com.sentryfire.model.WOMeta;
  import com.sentryfire.persistance.DAOFactory;
+ import org.joda.time.DateTime;
  import org.joda.time.MutableDateTime;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
@@ -37,9 +39,9 @@
  {
     Logger log = LoggerFactory.getLogger(getClass());
 
-    public List<WO> route()
+    public List<WO> route(DateTime start)
     {
-       List<WO> result = getWorkOrderList();
+       List<WO> result = getWorkOrderList(start);
 
        List<WO> denver = result.stream().filter(w -> w.getDEPT().equals("DENVER")).collect(Collectors.toList());
        List<WO> greeley = result.stream().filter(w -> w.getDEPT().equals("GREELEY")).collect(Collectors.toList());
@@ -68,7 +70,8 @@
 
     private void calculateWorkload(List<WO> list)
     {
-       Map<String, Integer> itemTimes = SentryAppConfiguartion.getInstance().getItemTimeMinsMap();
+       Map<String, Integer> itemTimes = AppConfiguartion.getInstance().getItemTimeMinsMap();
+       Map<String, SKILL> itemSkill = AppConfiguartion.getInstance().getItemToSkill();
 //       List<Item> allItems = list.stream().map(WO::getLineItems).flatMap(i -> i.stream()).collect(Collectors.toList());
        Set<String> unknown = Sets.newHashSet();
 
@@ -80,16 +83,22 @@
           for (Item item : wo.getLineItems())
           {
              String ic = item.getIC();
-             ItemStatHolder current = new ItemStatHolder(0, 0, ic);
+             SKILL skill = itemSkill.get(ic);
+             ItemStatHolder current = new ItemStatHolder(0, 0, ic, skill);
              meta.getItemStatHolderList().add(current);
 
-             if (ic != null && item.getHQ() != null)
+             // If count is null/0 - there should be at least 1 item
+             Integer count = item.getHQ();
+             if (count == null || count == 0)
+                count = 1;
+
+             if (ic != null)
              {
                 Integer time = itemTimes.get(ic);
                 if (time != null)
                 {
-                   current.setMin(item.getHQ() * time);
-                   current.setCount(item.getHQ());
+                   current.setMin(count * time);
+                   current.setCount(count);
                 }
                 else
                 {
@@ -107,7 +116,7 @@
        printItemTotals(allItemStats);
        log.info("----------");
 
-       Integer driveTotal = list.size() * SentryAppConfiguartion.getInstance().getDriveTime();
+       Integer driveTotal = list.size() * AppConfiguartion.getInstance().getDriveTime();
        log.info("Drive Total: " + driveTotal);
 
        Integer workTotal = allItemStats.stream().map(ItemStatHolder::getMin).mapToInt(Number::intValue).sum();
@@ -141,7 +150,7 @@
        try
        {
           GeoApiContext context = new GeoApiContext.Builder()
-             .apiKey(SentryConfiguartion.getInstance().getGoogleMapApiKey()).build();
+             .apiKey(ExternalConfiguartion.getInstance().getGoogleMapApiKey()).build();
           //           PlacesApi.nearbySearchNextPage();
           //
           GeocodingResult[] results = GeocodingApi.geocode(
@@ -158,19 +167,10 @@
 
     }
 
-    public List<WO> getWorkOrderList()
+    public List<WO> getWorkOrderList(DateTime start)
     {
-       MutableDateTime start = new MutableDateTime();
-       start.setYear(2018);
-       start.setMonthOfYear(7);
-       start.setDayOfMonth(1);
-       start.setHourOfDay(0);
-       start.setMinuteOfHour(0);
-       start.setSecondOfMinute(0);
-
        MutableDateTime end = new MutableDateTime(start);
        end.setDayOfMonth(start.dayOfMonth().getMaximumValue());
-
 
        return DAOFactory.getWipDao().getHistoryWOAndItems(start.toDateTime(), end.toDateTime());
     }
@@ -190,7 +190,8 @@
           ItemStatHolder current = sum.get(h.getItemCode());
           if (current == null)
           {
-             current = new ItemStatHolder(0, 0, h.getItemCode());
+             current = new ItemStatHolder(0, 0, h.getItemCode(),
+                                          AppConfiguartion.getInstance().getItemToSkill().get(h.getItemCode()));
              sum.put(h.getItemCode(), current);
           }
           current.setMin(current.getMin() + h.getMin());

@@ -9,26 +9,25 @@
 
  package com.sentryfire.model;
 
+ import com.sentryfire.business.schedule.model.EventTask;
+
  public class ItemStatHolder
  {
     protected Integer min;
     protected Integer count;
     protected String itemCode;
+    protected SKILL skill;
+    protected EventTask eventTask;
 
     public ItemStatHolder(Integer min,
                           Integer count,
-                          String itemCode)
+                          String itemCode,
+                          SKILL skill)
     {
        this.min = min;
        this.count = count;
        this.itemCode = itemCode;
-    }
-
-    @Override
-    public String toString()
-    {
-       return "(ic=" + itemCode + ", min=" + min +
-              ", count=" + count + ")";
+       this.skill = skill;
     }
 
     public Integer getMin()
@@ -59,5 +58,37 @@
     public void setItemCode(String itemCode)
     {
        this.itemCode = itemCode;
+    }
+
+    public SKILL getSkill()
+    {
+       return skill;
+    }
+
+    public void setSkill(SKILL skill)
+    {
+       this.skill = skill;
+    }
+
+    public EventTask getEventTask()
+    {
+       return eventTask;
+    }
+
+    public void setEventTask(EventTask eventTask)
+    {
+       this.eventTask = eventTask;
+    }
+
+    @Override
+    public String toString()
+    {
+       return "ItemStatHolder{" +
+              "min=" + min +
+              ", count=" + count +
+              ", itemCode='" + itemCode + '\'' +
+              ", skill=" + skill +
+              ", eventTask=" + eventTask +
+              '}';
     }
  }

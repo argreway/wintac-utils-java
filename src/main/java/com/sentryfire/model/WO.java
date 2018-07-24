@@ -10,6 +10,7 @@
  package com.sentryfire.model;
 
  import java.util.List;
+ import java.util.Objects;
 
  import org.influxdb.annotation.Column;
  import org.influxdb.annotation.Measurement;
@@ -318,6 +319,23 @@
     public void setZIP(String ZIP)
     {
        this.ZIP = ZIP;
+    }
+
+
+    @Override
+    public boolean equals(Object o)
+    {
+       if (this == o) return true;
+       if (o == null || getClass() != o.getClass()) return false;
+       WO wo = (WO) o;
+       return Objects.equals(IN2, wo.IN2);
+    }
+
+    @Override
+    public int hashCode()
+    {
+
+       return Objects.hash(IN2);
     }
 
     @Override

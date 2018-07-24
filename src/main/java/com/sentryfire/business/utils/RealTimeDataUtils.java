@@ -11,8 +11,8 @@
 
  import javax.swing.table.DefaultTableModel;
 
-import com.sentryfire.SentryConfiguartion;
-import com.sentryfire.persistance.DAOFactory;
+ import com.sentryfire.config.ExternalConfiguartion;
+ import com.sentryfire.persistance.DAOFactory;
 import com.sentryfire.persistance.dao.influxdb.InfluxClient;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -48,10 +48,10 @@ import org.slf4j.LoggerFactory;
 
        DAOFactory.sqlDB().closeDBConnection();
        DAOFactory.sqlDB().connectToDB(
-          SentryConfiguartion.getInstance().getServer(),
-          SentryConfiguartion.getInstance().getDatabase(),
-          SentryConfiguartion.getInstance().getUser(),
-          SentryConfiguartion.getInstance().getPassword());
+          ExternalConfiguartion.getInstance().getServer(),
+          ExternalConfiguartion.getInstance().getDatabase(),
+          ExternalConfiguartion.getInstance().getUser(),
+          ExternalConfiguartion.getInstance().getPassword());
 
        DAOFactory.getInfluxClient().dropDataBase();
        DAOFactory.getInfluxClient().createDataBase();

@@ -13,10 +13,13 @@
 import java.util.List;
 
 import com.google.common.collect.Lists;
- import com.sentryfire.business.utils.BalanceFinder;
- import com.sentryfire.gui.GUIManager;
+import com.sentryfire.business.schedule.SchedulerBuilder;
+import com.sentryfire.config.AppConfiguartion;
+import com.sentryfire.config.ExternalConfiguartion;
+import com.sentryfire.gui.GUIManager;
 import com.sentryfire.persistance.DAOFactory;
 import com.sentryfire.timers.StatsTimer;
+import org.joda.time.MutableDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,17 +31,17 @@ import org.slf4j.LoggerFactory;
 
     protected static StatsTimer timer;
 
-//    public static void main(String[] args)
+//        public static void main(String[] args)
     public static void test(String[] args)
     {
        try
        {
-          SentryAppConfiguartion.getInstance();
+          AppConfiguartion.getInstance();
           DAOFactory.sqlDB().connectToDB(
-             SentryConfiguartion.getInstance().getServer(),
-             SentryConfiguartion.getInstance().getDatabase(),
-             SentryConfiguartion.getInstance().getUser(),
-             SentryConfiguartion.getInstance().getPassword());
+             ExternalConfiguartion.getInstance().getServer(),
+             ExternalConfiguartion.getInstance().getDatabase(),
+             ExternalConfiguartion.getInstance().getUser(),
+             ExternalConfiguartion.getInstance().getPassword());
 
           // Robo Dialer
 //       DailerManager manager = new DailerManager();
@@ -55,13 +58,22 @@ import org.slf4j.LoggerFactory;
 //       excelWritter.writeSpreadSheet(columns, rows);
 
 
-//          CalendarManager.getInstance().deleteAllEvents(CalendarManager.CAL_NAME_FIP);
+//          CalendarManager.getInstance().deleteAllEvents(CalendarManager.CAL_NAME_GREELEY);
+//          CalendarManager.getInstance().deleteAllEvents(CalendarManager.CAL_NAME_DENVER);
 //          CalendarManager.getInstance().listCalendars();
 
-//          SchedulerBuilder schedulerBuilder = new SchedulerBuilder();
-//          schedulerBuilder.buildAndInsertAllSchedules();
+          MutableDateTime start = new MutableDateTime();
+          start.setYear(2018);
+          start.setMonthOfYear(8);
+          start.setDayOfMonth(1);
+          start.setHourOfDay(0);
+          start.setMinuteOfHour(0);
+          start.setSecondOfMinute(0);
 
-          BalanceFinder.searchHistoryForIncorrectDate();
+          SchedulerBuilder schedulerBuilder = new SchedulerBuilder();
+          schedulerBuilder.buildAndInsertAllSchedules(start.toDateTime());
+
+//          BalanceFinder.searchHistoryForIncorrectDate();
 
           DAOFactory.shutdown();
        }
@@ -71,7 +83,7 @@ import org.slf4j.LoggerFactory;
        }
     }
 
-//    public static void test2(String[] args)
+//        public static void test2(String[] args)
     public static void main(String[] args)
     {
        log.info("CLI Args " + Arrays.toString(args));

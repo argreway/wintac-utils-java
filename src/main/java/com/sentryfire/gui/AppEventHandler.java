@@ -17,7 +17,7 @@
  import javax.swing.JTable;
  import javax.swing.table.DefaultTableModel;
 
- import com.sentryfire.SentryConfiguartion;
+ import com.sentryfire.config.ExternalConfiguartion;
  import com.sentryfire.business.history.HistoryDataUtils;
  import com.sentryfire.business.utils.RealTimeDataUtils;
  import com.sentryfire.persistance.DAOFactory;
@@ -31,7 +31,7 @@
 
     private static ExecutorService executor = Executors.newFixedThreadPool(5);
 
-    private SentryConfiguartion config = SentryConfiguartion.getInstance();
+    private ExternalConfiguartion config = ExternalConfiguartion.getInstance();
     private MainApp window;
 
     public AppEventHandler()
