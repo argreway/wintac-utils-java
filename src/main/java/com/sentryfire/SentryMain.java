@@ -15,7 +15,6 @@ import java.util.List;
 import com.google.common.collect.Lists;
 import com.sentryfire.business.schedule.SchedulerBuilder;
 import com.sentryfire.config.AppConfiguartion;
-import com.sentryfire.config.ExternalConfiguartion;
 import com.sentryfire.gui.GUIManager;
 import com.sentryfire.persistance.DAOFactory;
 import com.sentryfire.timers.StatsTimer;
@@ -31,17 +30,17 @@ import org.slf4j.LoggerFactory;
 
     protected static StatsTimer timer;
 
-//        public static void main(String[] args)
-    public static void test(String[] args)
+        public static void main(String[] args)
+//    public static void test(String[] args)
     {
        try
        {
           AppConfiguartion.getInstance();
-          DAOFactory.sqlDB().connectToDB(
-             ExternalConfiguartion.getInstance().getServer(),
-             ExternalConfiguartion.getInstance().getDatabase(),
-             ExternalConfiguartion.getInstance().getUser(),
-             ExternalConfiguartion.getInstance().getPassword());
+//          DAOFactory.sqlDB().connectToDB(
+//             ExternalConfiguartion.getInstance().getServer(),
+//             ExternalConfiguartion.getInstance().getDatabase(),
+//             ExternalConfiguartion.getInstance().getUser(),
+//             ExternalConfiguartion.getInstance().getPassword());
 
           // Robo Dialer
 //       DailerManager manager = new DailerManager();
@@ -83,8 +82,8 @@ import org.slf4j.LoggerFactory;
        }
     }
 
-//        public static void test2(String[] args)
-    public static void main(String[] args)
+        public static void test2(String[] args)
+//    public static void main(String[] args)
     {
        log.info("CLI Args " + Arrays.toString(args));
 

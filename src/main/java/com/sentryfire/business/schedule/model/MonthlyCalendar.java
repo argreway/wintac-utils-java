@@ -119,11 +119,24 @@
        }
     }
 
-    public String printCalendar()
+    protected Long getCompletedWO()
+    {
+       Long total = 0L;
+       for (Day d : calendarDays.values())
+       {
+          total += d.getEventTaskList().values().stream().filter(e -> e.getWo() != null).count();
+       }
+       return total;
+    }
+
+    public String printCalendar(boolean shortVersion)
     {
        StringBuffer buffer = new StringBuffer();
-       buffer.append("======= Monthly Calendar For [").append(tech).append("], Month [").append(monthNumber).
-          append(", Year [").append(year).append(" ========\n\n");
+       buffer.append("\n======= Monthly Calendar For [").append(tech).append("], Month [").append(monthNumber).
+          append("], Year [").append(year).append("], WO Completed [").append(getCompletedWO()).append("] ========\n");
+       if (shortVersion)
+          return buffer.toString();
+
        for (Day day : calendarDays.values())
        {
           buffer.append("Day [").append(day.getDayNumber()).append("]");
@@ -136,6 +149,8 @@
              {
                 if (task.isLunch())
                    buffer.append("\t\tTask: LUNCH\n");
+                else if (task.isFree())
+                   buffer.append("\t\tTask: FREE\n");
                 else
                 {
                    buffer.append("\t\tTask: ").append(task.getStart()).append("\t").append(task.getEnd()).append("\t");

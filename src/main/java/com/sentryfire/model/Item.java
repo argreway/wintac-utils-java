@@ -9,12 +9,14 @@
 
  package com.sentryfire.model;
 
+ import java.io.Serializable;
+
  import org.influxdb.annotation.Column;
  import org.influxdb.annotation.Measurement;
 
 
  @Measurement (name = "ITEM")
- public class Item
+ public class Item implements Serializable
  {
     @Column (name = "time")
     protected String time;

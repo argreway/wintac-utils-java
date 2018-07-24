@@ -9,6 +9,7 @@
 
  package com.sentryfire.model;
 
+ import java.io.Serializable;
  import java.util.List;
  import java.util.Objects;
 
@@ -16,7 +17,7 @@
  import org.influxdb.annotation.Measurement;
 
  @Measurement (name = "WO")
- public class WO
+ public class WO implements Serializable
  {
 
     @Column (name = "time")

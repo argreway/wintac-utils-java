@@ -11,6 +11,7 @@
 
  import java.util.List;
  import java.util.Properties;
+ import java.util.stream.Collectors;
 
  import com.google.common.collect.Lists;
  import com.sentryfire.model.SKILL;
@@ -98,7 +99,8 @@
        {
           return defaultStrList;
        }
-       return Lists.newArrayList(prop.split(","));
+       List<String> result = Lists.newArrayList(prop.split(","));
+       return result.stream().filter(s -> !s.isEmpty()).collect(Collectors.toList());
     }
 
  }

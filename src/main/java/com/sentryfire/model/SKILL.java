@@ -11,6 +11,14 @@
 
  public enum SKILL
  {
-    FE, FA, SP, FP, KH, OF, BF, FH, KHI
+    FE, FA, SP, FP, KH, BF, FH, KHI
 
+    // FH = Fire Hydrant
+    // FP = Fire Pump
+    // KH = Kitchen Hood
+    // KHI = Kitchen Hood Install
+    // FE = Fire Ext
+    // SP = Sprinkler
+    // FA = Fire Alarm
+    // BF = Back Flow
  }

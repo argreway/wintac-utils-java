@@ -9,16 +9,18 @@
 
  package com.sentryfire.business.schedule.model;
 
+ import java.io.Serializable;
+
  import com.sentryfire.model.WO;
  import org.joda.time.DateTime;
 
- public class EventTask
+ public class EventTask implements Serializable
  {
     private WO wo;
     private DateTime start;
     private DateTime end;
     private boolean isLunch;
-    private boolean isFree;
+    private boolean isFree = false;
 
     public EventTask(WO wo,
                      DateTime start,

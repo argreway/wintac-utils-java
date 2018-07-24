@@ -9,14 +9,17 @@
 
  package com.sentryfire.model;
 
+ import java.io.Serializable;
+
  import com.sentryfire.business.schedule.model.EventTask;
 
- public class ItemStatHolder
+ public class ItemStatHolder implements Serializable
  {
     protected Integer min;
     protected Integer count;
     protected String itemCode;
     protected SKILL skill;
+    protected String tech;
     protected EventTask eventTask;
 
     public ItemStatHolder(Integer min,
@@ -70,6 +73,16 @@
        this.skill = skill;
     }
 
+    public String getTech()
+    {
+       return tech;
+    }
+
+    public void setTech(String tech)
+    {
+       this.tech = tech;
+    }
+
     public EventTask getEventTask()
     {
        return eventTask;
@@ -88,6 +101,7 @@
               ", count=" + count +
               ", itemCode='" + itemCode + '\'' +
               ", skill=" + skill +
+              ", tech='" + tech + '\'' +
               ", eventTask=" + eventTask +
               '}';
     }

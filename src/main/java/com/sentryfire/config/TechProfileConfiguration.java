@@ -11,6 +11,7 @@
 
  import java.io.File;
  import java.io.FileInputStream;
+ import java.util.List;
  import java.util.Map;
  import java.util.Properties;
 
@@ -65,6 +66,22 @@
     //*******************//
     // Getters
     //*******************//
+
+    public List<String> getAllCustomerPreferences()
+    {
+       List<String> allCustomerPrefs = Lists.newArrayList();
+
+       List<TechProfile> allProfiles = Lists.newArrayList();
+       allProfiles.addAll(denTechToProfile.values());
+       allProfiles.addAll(greTechToProfile.values());
+       allProfiles.addAll(fipTechToProfile.values());
+       for (TechProfile profile : allProfiles)
+       {
+
+          allCustomerPrefs.addAll(profile.getCustomerPref());
+       }
+       return allCustomerPrefs;
+    }
 
     public Map<String, TechProfile> getDenTechToProfiles()
     {
