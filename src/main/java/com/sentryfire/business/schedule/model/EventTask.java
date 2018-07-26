@@ -20,7 +20,9 @@
     private DateTime start;
     private DateTime end;
     private boolean isLunch;
+    private boolean lunchBuildIn = false;
     private boolean isFree = false;
+    private boolean isDriving = false;
 
     public EventTask(WO wo,
                      DateTime start,
@@ -73,6 +75,26 @@
        isLunch = lunch;
     }
 
+    public boolean isLunchBuildIn()
+    {
+       return lunchBuildIn;
+    }
+
+    public void setLunchBuildIn(boolean lunchBuildIn)
+    {
+       this.lunchBuildIn = lunchBuildIn;
+    }
+
+    public boolean isDriving()
+    {
+       return isDriving;
+    }
+
+    public void setDriving(boolean driving)
+    {
+       isDriving = driving;
+    }
+
     public boolean isFree()
     {
        return isFree;
@@ -101,7 +123,9 @@
               ", start=" + start +
               ", end=" + end +
               ", isLunch=" + isLunch +
+              ", lunchBuildIn=" + lunchBuildIn +
               ", isFree=" + isFree +
+              ", isDriving=" + isDriving +
               '}';
     }
  }

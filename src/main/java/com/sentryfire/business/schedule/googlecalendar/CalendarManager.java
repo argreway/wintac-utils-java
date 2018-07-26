@@ -15,7 +15,6 @@
  import java.util.Collections;
  import java.util.List;
  import java.util.Map;
- import java.util.stream.Collectors;
 
  import com.google.api.client.auth.oauth2.Credential;
  import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -36,6 +35,8 @@
  import com.google.api.services.calendar.model.Event;
  import com.google.api.services.calendar.model.Events;
  import com.google.common.collect.Maps;
+ import com.sentryfire.config.TechProfile;
+ import com.sentryfire.config.TechProfileConfiguration;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,7 @@
     private static final String CREDENTIALS_FOLDER = "/tmp/credentials"; // Directory to store user credentials.
 
     private static final List<String> SCOPES = Collections.singletonList(CalendarScopes.CALENDAR);
-        private static final String CLIENT_SECRET_FILE = "client_secret.json";
+    private static final String CLIENT_SECRET_FILE = "client_secret.json";
 //    private static final String CLIENT_SECRET_FILE = "my-project-delegation-service-account.json";
 
     public static String CAL_NAME_PRIMARY = "primary";
@@ -84,9 +85,10 @@
        try
        {
 
+          // Batches of size one seem to still work if we are getting throttled?
+//          for (Event e : events.stream().limit(1).collect(Collectors.toList()))
           BatchRequest batch = service.batch();
-          for (Event e : events.stream().limit(1).collect(Collectors.toList()))
-//             for (Event e : events)
+          for (Event e : events)
           {
              try
              {
@@ -135,6 +137,8 @@
     public void deleteAllEvents(String calName) throws Exception
     {
        Events eventList = service.events().list(getCalID(calName)).execute();
+       if (eventList == null || eventList.getItems() == null || eventList.getItems().isEmpty())
+          return;
 
        BatchRequest batch = service.batch();
        for (Event e : eventList.getItems())
@@ -157,6 +161,11 @@
        {
           log.error("Failed to submit event:", e);
        }
+    }
+
+    public Map<String, String> getCalendarNameToID()
+    {
+       return calendarNameToID;
     }
 
     ////////////////
@@ -192,12 +201,15 @@
 
           for (CalendarListEntry entry : list.getItems())
           {
-             if (CAL_NAME_FIP.equals(entry.getSummary()))
-                calendarNameToID.put(CAL_NAME_FIP, entry.getId());
-             else if (CAL_NAME_GREELEY.equals(entry.getSummary()))
-                calendarNameToID.put(CAL_NAME_GREELEY, entry.getId());
-             else if (CAL_NAME_DENVER.equals(entry.getSummary()))
-                calendarNameToID.put(CAL_NAME_DENVER, entry.getId());
+             TechProfile profile = TechProfileConfiguration.getInstance().getDenTechToProfiles().get(entry.getSummary());
+             if (profile != null)
+                calendarNameToID.put(profile.getName(), entry.getId());
+//             if (CAL_NAME_FIP.equals(entry.getSummary()))
+//                calendarNameToID.put(CAL_NAME_FIP, entry.getId());
+//             else if (CAL_NAME_GREELEY.equals(entry.getSummary()))
+//                calendarNameToID.put(CAL_NAME_GREELEY, entry.getId());
+//             else if (CAL_NAME_DENVER.equals(entry.getSummary()))
+//                calendarNameToID.put(CAL_NAME_DENVER, entry.getId());
           }
           log.info("Mapped the following calendars to IDs: " + calendarNameToID);
        }

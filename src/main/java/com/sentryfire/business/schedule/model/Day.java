@@ -11,10 +11,13 @@
 
  import java.util.Iterator;
  import java.util.Map;
+ import java.util.Objects;
  import java.util.TreeMap;
  import java.util.stream.Collectors;
 
+ import com.google.common.collect.Maps;
  import com.sentryfire.config.AppConfiguartion;
+ import com.sentryfire.model.WO;
  import org.joda.time.DateTime;
  import org.joda.time.MutableDateTime;
  import org.slf4j.Logger;
@@ -30,6 +33,7 @@
     private Integer year;
 
     private DateTime END_OF_DAY;
+    private DateTime BEGIN_OF_DAY;
     private DateTime LUNCH_WINDOW_BEGIN;
     private DateTime LUNCH_WINDOW_END;
 
@@ -49,6 +53,9 @@
        this.year = year;
        this.isWorkDay = isWorkDay;
 
+       BEGIN_OF_DAY = getCurrentDayWithHourAndMin(
+          AppConfiguartion.getInstance().getBeginDayHour(),
+          AppConfiguartion.getInstance().getBeginDayMin()).toDateTime();
        END_OF_DAY = getCurrentDayWithHourAndMin(
           AppConfiguartion.getInstance().getEndDayHour(),
           AppConfiguartion.getInstance().getEndDayMin()).toDateTime();
@@ -60,10 +67,125 @@
           0).toDateTime();
     }
 
+    public EventTask scheduleEventTaskMins(WO wo,
+                                           Integer taskTimeMins)
+    {
+       if (!isWorkDay)
+          return null;
+
+       // Round task to closest next 15 mins
+       int mod = taskTimeMins % 15;
+       if (mod != 0)
+          taskTimeMins += (15 - mod);
+       Integer roundTime = taskTimeMins;
+
+       // Check for slot available
+       Map<DateTime, Integer> slots = getTimeGaps();
+       if (slots.values().stream().noneMatch(i -> i >= roundTime))
+          return null;
+
+       DateTime start = null;
+       for (Map.Entry<DateTime, Integer> entry : slots.entrySet())
+       {
+          if (entry.getValue() >= roundTime)
+          {
+             start = entry.getKey();
+             break;
+          }
+       }
+
+       MutableDateTime endTask = new MutableDateTime(start);
+       endTask.addMinutes(roundTime);
+
+       EventTask task = new EventTask(wo, start, endTask.toDateTime(), false);
+
+
+       // If more than 6 hours schedule lunch at site
+       if (roundTime >= 360)
+       {
+//          buildLunchTask(LUNCH_WINDOW_BEGIN);
+          // Build in lunch
+          task.setLunchBuildIn(true);
+          endTask.addMinutes(AppConfiguartion.getInstance().getLunchTime());
+          task.setEnd(endTask.toDateTime());
+       }
+       else if (endTask.isAfter(LUNCH_WINDOW_BEGIN) && endTask.isBefore(LUNCH_WINDOW_END))
+       {
+          buildLunchTask(endTask.toDateTime());
+//          endTask.addMinutes(AppConfiguartion.getInstance().getLunchTime());
+//          task.setEnd(endTask.toDateTime());
+       }
+//       if (includeLunch)
+//       {
+//          {
+//              Create lunch task and extend original task 30 minutes
+//             EventTask lunchTask = new EventTask(wo, getCurrentDayWithHourAndMin(12, 0).toDateTime(),
+//                                                 getCurrentDayWithHourAndMin(12, AppConfiguartion.getInstance().getLunchTime()).toDateTime(),
+//                                                 true);
+//             addEventTask(lunchTask);
+//
+//             MutableDateTime newEnd = new MutableDateTime(stop);
+//             newEnd.addMinutes(AppConfiguartion.getInstance().getLunchTime());
+//             task.setEnd(newEnd.toDateTime());
+//          }
+//       }
+       addEventTask(task);
+       return task;
+    }
+
     /**
-     * Get the next available time window that is greater than N minutes.
+     * NOTE - shrink gaps that are not at the beginning of the day to account for
+     * drive time.
+     * <p>
+     */
+    public Map<DateTime, Integer> getTimeGaps()
+    {
+       Map<DateTime, Integer> result = Maps.newHashMap();
+       if (eventTaskList.isEmpty())
+       {
+          // Full day available
+          result.put(BEGIN_OF_DAY, 8 * 60);
+          return result;
+       }
+
+       DateTime currentTime = BEGIN_OF_DAY;
+
+       Iterator<EventTask> iter = eventTaskList.values().iterator();
+       while (iter.hasNext())
+       {
+          EventTask task = iter.next();
+
+          MutableDateTime taskEffectiveStart = new MutableDateTime(task.getStart());
+          MutableDateTime taskEffectiveEnd = new MutableDateTime(task.getEnd());
+          if (task.isLunch())
+             taskEffectiveEnd.addMinutes(AppConfiguartion.getInstance().getDriveTime() / 2);
+          else if (!taskEffectiveStart.isEqual(BEGIN_OF_DAY))
+             taskEffectiveStart.addMinutes(-AppConfiguartion.getInstance().getDriveTime());
+
+          Integer currentGapMin = (int) (taskEffectiveStart.getMillis() - currentTime.getMillis()) / 1000 / 60;
+          if (currentGapMin > 0)
+             result.put(currentTime, currentGapMin);
+          currentTime = taskEffectiveEnd.toDateTime();
+
+          // End of Day
+          if (!iter.hasNext())
+          {
+             if (!task.isLunch())
+                taskEffectiveEnd.addMinutes(AppConfiguartion.getInstance().getDriveTime());
+             currentGapMin = (int) (END_OF_DAY.getMillis() - taskEffectiveEnd.getMillis()) / 1000 / 60;
+             if (currentGapMin > 0)
+                result.put(taskEffectiveEnd.toDateTime(), currentGapMin);
+          }
+       }
+
+       return result;
+    }
+
+    /**
+     * Get the next available time window.
      * Schedule lunch break if possible.
      */
+    @Deprecated
     public EventTask getNextAvailableEventTask()
     {
        Long minSlotGap = Integer.toUnsignedLong(AppConfiguartion.getInstance().getEmptyTimeSlotMinimumMin());
@@ -190,6 +312,19 @@
        return null;
     }
 
+    protected EventTask buildLunchTask(DateTime startLunch)
+    {
+       if (eventTaskList.values().stream().anyMatch(EventTask::isLunch))
+          return null;
+
+       MutableDateTime endLunch = new MutableDateTime(startLunch);
+       endLunch.addMinutes(AppConfiguartion.getInstance().getLunchTime());
+
+       EventTask lunch = new EventTask(null, startLunch, endLunch.toDateTime(), true);
+       addEventTask(lunch);
+       return lunch;
+    }
+
     public Integer getDayNumber()
     {
        return dayNumber;
@@ -274,6 +409,7 @@
        date.setHourOfDay(0);
        date.setMinuteOfHour(0);
        date.setSecondOfMinute(0);
+       date.setMillisOfSecond(0);
 
        return date;
     }
@@ -281,5 +417,23 @@
     protected boolean lunchAlreadyScheduled()
     {
        return !eventTaskList.values().stream().filter(EventTask::isLunch).collect(Collectors.toList()).isEmpty();
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+       if (this == o) return true;
+       if (o == null || getClass() != o.getClass()) return false;
+       Day day = (Day) o;
+       return Objects.equals(dayNumber, day.dayNumber) &&
+              Objects.equals(monthNumber, day.monthNumber) &&
+              Objects.equals(year, day.year);
+    }
+
+    @Override
+    public int hashCode()
+    {
+
+       return Objects.hash(dayNumber, monthNumber, year);
     }
  }

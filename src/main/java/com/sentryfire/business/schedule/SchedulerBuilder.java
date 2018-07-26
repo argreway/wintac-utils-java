@@ -16,15 +16,19 @@
  import java.util.TreeMap;
  import java.util.stream.Collectors;
 
+ import com.google.api.client.util.DateTime;
  import com.google.api.services.calendar.model.Event;
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
  import com.sentryfire.business.schedule.googlecalendar.CalendarManager;
+ import com.sentryfire.business.schedule.googlecalendar.CalenderUtils;
  import com.sentryfire.business.schedule.model.Day;
  import com.sentryfire.business.schedule.model.EventTask;
  import com.sentryfire.business.schedule.model.MonthlyCalendar;
  import com.sentryfire.business.schedule.model.ScheduleCalendar;
  import com.sentryfire.business.utils.SerializerUtils;
+ import com.sentryfire.config.AppConfiguartion;
  import com.sentryfire.config.TechProfile;
  import com.sentryfire.config.TechProfileConfiguration;
  import com.sentryfire.model.ItemStatHolder;
@@ -57,15 +61,14 @@
        List<WO> cosprings = woList.stream().filter(w -> w.getDEPT().equals("CO_SPRINGS")).collect(Collectors.toList());
 
        ScheduleCalendar denCalendar = buildSchedule(TechProfileConfiguration.getInstance().getDenTechToProfiles(), denver, start);
-       ScheduleCalendar greCalendar = buildSchedule(TechProfileConfiguration.getInstance().getGreTechToProfiles(), greeley, start);
-       ScheduleCalendar fipCalendar = buildSchedule(TechProfileConfiguration.getInstance().getFipTechToProfiles(), cosprings, start);
+//       ScheduleCalendar greCalendar = buildSchedule(TechProfileConfiguration.getInstance().getGreTechToProfiles(), greeley, start);
+//       ScheduleCalendar fipCalendar = buildSchedule(TechProfileConfiguration.getInstance().getFipTechToProfiles(), cosprings, start);
 
-       List<Event> calendarEvents = scheduleCalendarToEvents(fipCalendar);
+       submitCalendarToGoogle(denCalendar);
+//       List<Event> calendarEvents = scheduleCalendarToEvents(fipCalendar);
 //       calendarManager.bulkAddEvents(calendarEvents, CalendarManager.CAL_NAME_FIP);
-       calendarEvents = scheduleCalendarToEvents(greCalendar);
+//       calendarEvents = scheduleCalendarToEvents(greCalendar);
 //       calendarManager.bulkAddEvents(calendarEvents, CalendarManager.CAL_NAME_GREELEY);
-       calendarEvents = scheduleCalendarToEvents(denCalendar);
-//       calendarManager.bulkAddEvents(calendarEvents, CalendarManager.CAL_NAME_DENVER);
     }
 
     ////////////////
@@ -80,32 +83,66 @@
 
 
        List<WO> masterMonthList = Lists.newArrayList(rawList);
-       List<WO> completedList = Lists.newArrayList();
+       Set<WO> completedList = Sets.newHashSet();
 
        Map<String, List<WO>> distributedWOList = distributeWorkLoad(masterMonthList, techToProfile.values());
 
        for (MonthlyCalendar techCal : scheduleCalendar.getTechCalendars().values())
        {
           String tech = techCal.getTech();
-          List<SKILL> skills = techToProfile.get(tech).getSkills();
 
-          List<WO> completedWO = scheduleTechForMonth(tech, skills, techCal, distributedWOList.get(tech));
+          List<WO> unScheduledList = distributedWOList.get(tech);
+//          List<SKILL> skills = techToProfile.get(tech).getSkills();
+//          List<WO> completedWO = scheduleTechForMonth(tech, skills, techCal, distributedWOList.get(tech));
+          List<WO> completedWO = scheduleTechForMonth(techCal, distributedWOList.get(tech));
 
-          log.info("TECH: Total [" + distributedWOList.get(tech).size() + "] Completed WO [" + completedWO.size() + "]" +
-                   " NOT Scheduled [" + (distributedWOList.get(tech).size() - completedWO.size()) + "]");
 
           masterMonthList.removeAll(completedWO);
+          unScheduledList.removeAll(completedWO);
+          log.info("TECH: [" + tech + "] Total [" + distributedWOList.get(tech).size() + "] Completed WO [" + completedWO.size() + "]" +
+                   " NOT Scheduled [" + unScheduledList.size() + "]");
           completedList.addAll(completedWO);
        }
 
        log.info("TOTAL: Completed WO [" + completedList.size() + "] - not Scheduled [" + masterMonthList.size() + "]");
+       log.error("Unscheduled WO: ");
+       masterMonthList.forEach(w -> log.error("\t " + w));
        return scheduleCalendar;
     }
 
-    protected List<WO> scheduleTechForMonth(String tech,
-                                            List<SKILL> skills,
-                                            MonthlyCalendar calendar,
+    protected List<WO> scheduleTechForMonth(MonthlyCalendar calendar,
                                             final List<WO> woList)
+    {
+       log.info("Cities to visit: " + woList.stream().map(WO::getCITY).collect(Collectors.toSet()));
+       // Keep track of what we scheduled
+       List<WO> completedWOList = Lists.newArrayList();
+
+       // Sort WO Longest to Shortest
+       List<WO> techMasterList = woList.stream().sorted(
+          (w1, w2) -> Integer.compare(w2.getMetaData().getWorkLoadMinutes(), w1.getMetaData().getWorkLoadMinutes())).
+          collect(Collectors.toList());
+
+       for (WO wo : techMasterList)
+       {
+          EventTask timeSlot = calendar.scheduleWorkOrder(wo);
+          if (timeSlot == null)
+          {
+             log.error("Could not schedule wo " + wo.getIN2() + " time: " + wo.getMetaData().getWorkLoadMinutes());
+             continue;
+          }
+          completedWOList.add(wo);
+       }
+
+       log.info(calendar.printCalendar(false));
+
+       return completedWOList;
+    }
+
+    @Deprecated
+    protected List<WO> scheduleTechForMonthOld(String tech,
+                                               List<SKILL> skills,
+                                               MonthlyCalendar calendar,
+                                               final List<WO> woList)
     {
        List<WO> completedWOList = Lists.newArrayList();
 
@@ -113,12 +150,11 @@
        List<WO> techMasterList = woList.stream().filter(w -> hasRequiredSkills(w, skills)).collect(Collectors.toList());
 
 
-       List<EventTask> eventTasks = Lists.newArrayList();
        EventTask nextSlot = calendar.getNextAvailableSlot();
        while (nextSlot != null && !techMasterList.isEmpty())
        {
 
-          Day taskDay = calendar.getCalendarDays().get(nextSlot.getDayOfMonth());
+          Day taskDay = calendar.getMasterCalendar().get(nextSlot.getDayOfMonth());
           Long gapInMinutes = (nextSlot.getEnd().getMillis() - nextSlot.getStart().getMillis()) / 1000 / 60;
 //          gapInMinutes -= AppConfiguartion.getInstance().getDriveTime();
 
@@ -153,7 +189,6 @@
 
        log.info("Calendar Complete For Tech [" + tech + "]");
        log.info(calendar.printCalendar(false));
-       eventTasks.forEach(e -> log.info(e.getStart() + " : " + e.getEnd()));
 //       events.forEach(e -> log.info(e.getStart() + " : " + e.getEnd() + ": " + e.getSummary()));
 //       return events;
        return completedWOList;
@@ -262,15 +297,15 @@
           Set<String> availableAlreadyOnSite = availableTechs.stream().map(TechProfile::getName).collect(Collectors.toSet());
           availableAlreadyOnSite.retainAll(wo.getMetaData().getTechsOnSite());
 
-          if (TechProfileConfiguration.getInstance().getAllCustomerPreferences().contains(wo.getCN()))
-          {
-             String tech = techProfileList.stream().filter(p -> p.getCustomerPref().contains(wo.getCN())).findFirst().get().getName();
-             items.forEach(i -> i.setTech(tech));
-             result.get(tech).add(wo);
-          }
-          else if (!availableAlreadyOnSite.isEmpty())
+          if (!availableAlreadyOnSite.isEmpty())
           {
              String tech = availableAlreadyOnSite.iterator().next();
+             items.forEach(i -> i.setTech(tech));
+//             result.get(tech).add(wo);
+          }
+          else if (TechProfileConfiguration.getInstance().getAllCustomerPreferences().contains(wo.getCN()))
+          {
+             String tech = techProfileList.stream().filter(p -> p.getCustomerPref().contains(wo.getCN())).findFirst().get().getName();
              items.forEach(i -> i.setTech(tech));
              result.get(tech).add(wo);
           }
@@ -311,28 +346,56 @@
     // Helpers
     /////////////////////////////////////
 
-    protected List<Event> scheduleCalendarToEvents(ScheduleCalendar calendar)
+    protected void submitCalendarToGoogle(ScheduleCalendar calendar)
+    {
+
+       for (MonthlyCalendar cal : calendar.getTechCalendars().values())
+       {
+//          if (cal.getTech().equals("BR") || cal.getTech().equals("ID") || cal.getTech().equals("MH"))
+          {
+             List<Event> calendarEvents = monlthlyCalendarToEvents(cal);
+             calendarManager.bulkAddEvents(calendarEvents, cal.getTech());
+          }
+       }
+    }
+
+    protected List<Event> monlthlyCalendarToEvents(MonthlyCalendar calendar)
     {
        List<Event> events = Lists.newArrayList();
 
-//       List<String> itemDesc = wo.getMetaData().getItemStatHolderList().stream().map(
-//          i -> i.getItemCode() + ":" + i.getCount()).collect(Collectors.toList());
-//
-//       DateTime start = new DateTime(startDt.toDate());
-//       DateTime end = new DateTime(endDt.toDate());
-//       List<String> people = Lists.newArrayList("tony.greway@sentryfire.net");
-//       Event event = CalenderUtils.createEvent(wo.getNAME() + " : " + wo.getCN() + "-" + wo.getIN2(),
-//                                               wo.getADR1() + " " + wo.getCITY() + " " + wo.getZIP(), String.join(",", itemDesc),
-//                                               start, end, null, people, AppConfiguartion.getInstance().getCalReminderMin(),
-//                                               null);
-//
-//       events.add(event);
-//
-//       // Add Drive time
-//       startDt.addMinutes(workTimeMins);
-//       startDt.addMinutes(AppConfiguartion.getInstance().getDriveTime());
-//       endDt.addMinutes(AppConfiguartion.getInstance().getDriveTime());
-//
+       // Get All Event Tasks
+       List<EventTask> allEventsTasks = calendar.getAllEventTasks(true);
+
+       for (EventTask task : allEventsTasks)
+       {
+          String title;
+          String desc;
+          String location;
+          if (task.isLunch())
+          {
+             title = "LUNCH";
+             desc = "LUNCH";
+             location = "LUNCH";
+          }
+          else
+          {
+             WO wo = task.getWo();
+             title = wo.getNAME() + " : " + wo.getCN() + "-" + wo.getIN2();
+
+             List<String> itemDesc = wo.getMetaData().getItemStatHolderList().stream().map(
+                i -> i.getItemCode() + ":" + i.getCount()).collect(Collectors.toList());
+             desc = String.join(",", itemDesc);
+             location = wo.getADR1() + " " + wo.getCITY() + " " + wo.getZIP();
+          }
+
+          DateTime start = new DateTime(task.getStart().toDate());
+          DateTime end = new DateTime(task.getEnd().toDate());
+          List<String> people = Lists.newArrayList("tony.greway@sentryfire.net");
+          Event event = CalenderUtils.createEvent(title, location, desc, start, end, null, people,
+                                                  AppConfiguartion.getInstance().getCalReminderMin(),
+                                                  null);
+          events.add(event);
+       }
        return events;
     }
 
