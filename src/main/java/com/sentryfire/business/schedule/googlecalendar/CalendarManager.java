@@ -49,8 +49,8 @@
     private static final String CREDENTIALS_FOLDER = "/tmp/credentials"; // Directory to store user credentials.
 
     private static final List<String> SCOPES = Collections.singletonList(CalendarScopes.CALENDAR);
-    private static final String CLIENT_SECRET_FILE = "client_secret.json";
-//    private static final String CLIENT_SECRET_FILE = "my-project-delegation-service-account.json";
+    //    private static final String CLIENT_SECRET_FILE = "client_secret.json";
+    private static final String CLIENT_SECRET_FILE = "sentry-scheduler-official.json";
 
     public static String CAL_NAME_PRIMARY = "primary";
 
@@ -134,7 +134,7 @@
        return service.events().list(getCalID(calName)).execute();
     }
 
-    public void deleteAllEvents(String calName) throws Exception
+    public void deleteAllCalendarEvents(String calName) throws Exception
     {
        Events eventList = service.events().list(getCalID(calName)).execute();
        if (eventList == null || eventList.getItems() == null || eventList.getItems().isEmpty())
@@ -142,6 +142,20 @@
 
        BatchRequest batch = service.batch();
        for (Event e : eventList.getItems())
+       {
+          System.out.println("Deleting Event " + e.getId());
+          service.events().delete(getCalID(calName), e.getId()).queue(batch, new VoidCallBack());
+       }
+       batch.execute();
+    }
+
+    public void deleteEventList(String calName,
+                                List<Event> eventsToDelete) throws Exception
+    {
+       if (calName == null || eventsToDelete.isEmpty())
+          return;
+       BatchRequest batch = service.batch();
+       for (Event e : eventsToDelete)
        {
           System.out.println("Deleting Event " + e.getId());
           service.events().delete(getCalID(calName), e.getId()).queue(batch, new VoidCallBack());
@@ -178,8 +192,8 @@
        {
           final NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
 
-          service = new Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, getUserOauthCredentials(HTTP_TRANSPORT))
-//          service = new Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, getServiceAccountCredentials(HTTP_TRANSPORT))
+//          service = new Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, getUserOauthCredentials(HTTP_TRANSPORT))
+          service = new Calendar.Builder(HTTP_TRANSPORT, JSON_FACTORY, getServiceAccountCredentials(HTTP_TRANSPORT))
              .setApplicationName(APPLICATION_NAME).build();
        }
        catch (Exception e)
@@ -233,8 +247,8 @@
           .setServiceAccountPrivateKeyId(cr.getServiceAccountPrivateKeyId())
           .setTokenServerEncodedUrl(cr.getTokenServerEncodedUrl())
 //          .setServiceAccountUser("749725681897-jlg6po2hvl71e8lvtchno3h0r6qn0nvj.apps.googleusercontent.com")
-          .setServiceAccountUser("sentryfirescheduler@gmail.com")
-          .setClientSecrets("749725681897-jlg6po2hvl71e8lvtchno3h0r6qn0nvj.apps.googleusercontent.com", "y23iPYVUd2VDSxysVnLSxO4q");
+          .setServiceAccountUser("tony.greway@sentryfire.com");
+//          .setClientSecrets("749725681897-jlg6po2hvl71e8lvtchno3h0r6qn0nvj.apps.googleusercontent.com", "y23iPYVUd2VDSxysVnLSxO4q");
 
 //                 GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream("MyProject-1234.json"))
 //       GoogleCredential credential = GoogleCredential.fromStream(CalendarManager.class.getClassLoader().getResourceAsStream(CLIENT_SECRET_FILE))

@@ -46,6 +46,7 @@
     protected static final String SCHEDULE_SKILLS = PREFIX + "ScheduleSkills";
     protected static final String HOME = PREFIX + "Home";
     protected static final String TERRITORY = PREFIX + "Territory";
+    protected static final String EMAIL = PREFIX + "Email";
     protected static final String CUSTOMER_PREF = PREFIX + "CustomerPreference";
 
 
@@ -131,6 +132,7 @@
              profile.setCustomerPref(getStringList(CUSTOMER_PREF, Lists.newArrayList(), properties));
              profile.setHome(getString(HOME, properties));
              profile.setTerritory(getString(TERRITORY, properties));
+             profile.setEmail(getString(EMAIL, properties));
 
              if (profile.getDivision().equals("DENVER"))
                 denTechToProfile.put(profile.getName(), profile);

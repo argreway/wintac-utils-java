@@ -30,8 +30,9 @@ import org.slf4j.LoggerFactory;
 
     protected static StatsTimer timer;
 
-//    public static void main(String[] args)
-    public static void test(String[] args)
+
+    public static void main(String[] args)
+//    public static void test(String[] args)
     {
        try
        {
@@ -57,13 +58,6 @@ import org.slf4j.LoggerFactory;
 //       excelWritter.writeSpreadSheet(columns, rows);
 
 
-          // Delete all calendar events
-//          for (String calName : CalendarManager.getInstance().getCalendarNameToID().keySet())
-//          {
-//             CalendarManager.getInstance().deleteAllEvents(calName);
-//          }
-//          CalendarManager.getInstance().listCalendars();
-
           MutableDateTime start = new MutableDateTime();
           start.setYear(2018);
           start.setMonthOfYear(8);
@@ -85,8 +79,8 @@ import org.slf4j.LoggerFactory;
        }
     }
 
-//    public static void test2(String[] args)
-    public static void main(String[] args)
+    public static void test2(String[] args)
+//    public static void main(String[] args)
     {
        log.info("CLI Args " + Arrays.toString(args));
 

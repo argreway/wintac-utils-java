@@ -21,6 +21,7 @@
     protected List<SKILL> scheduleSkills;
     protected String home;
     protected String territory;
+    protected String email;
     protected List<String> customerPref;
 
     public String getName()
@@ -93,6 +94,16 @@
        this.customerPref = customerPref;
     }
 
+    public String getEmail()
+    {
+       return email;
+    }
+
+    public void setEmail(String email)
+    {
+       this.email = email;
+    }
+
     @Override
     public String toString()
     {
@@ -103,6 +114,7 @@
               ", scheduleSkills=" + scheduleSkills +
               ", home='" + home + '\'' +
               ", territory='" + territory + '\'' +
+              ", email='" + email + '\'' +
               ", customerPref=" + customerPref +
               '}';
     }

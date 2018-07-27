@@ -10,19 +10,19 @@
  package com.sentryfire.config;
 
  import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+ import java.io.FileNotFoundException;
+ import java.io.IOException;
+ import java.io.InputStream;
+ import java.util.Arrays;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Properties;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.sentryfire.model.SKILL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.sentryfire.model.SKILL;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
 
  public class AppConfiguartion extends BaseConfiguration
  {
@@ -60,6 +60,8 @@ import org.slf4j.LoggerFactory;
     protected static final String END_TIME_MIN = "endTimeMin";
 
     protected static final String CAL_REMINDER_MIN = "calReminderMins";
+    protected static final String CAL_EMAIL_DESC = "calEmailDesc";
+    protected static final String CAL_SCHEDULER_EMAIL = "calSchedulerEmail";
 
     //*******************//
     // Constructors
@@ -174,6 +176,35 @@ import org.slf4j.LoggerFactory;
     {
        String val = getString(CAL_REMINDER_MIN, "30");
        return Integer.parseInt(val);
+    }
+
+    public String getEmailDescription()
+    {
+       return getString(CAL_EMAIL_DESC, "Hello,\n\n" +
+
+                                        "This is Tony with Sentry Fires & Safety.\n\n" +
+
+                                        "We are your fire protection specialist that comes to inspect and service your fire protection " +
+                                        "equipment every year.  Your equipment is due for inspection or service at this time and " +
+                                        "we would like to schedule a technician to come out to your location and complete this work.  " +
+                                        "The items that are due for service are listed below at the bottom of this invite.\n\n" +
+
+                                        "Please accept this invite if the time will work for you, otherwise please reject it and " +
+                                        "propose a better time that suits you.  Don't hesitate to call or email with any questions.\n\n" +
+
+                                        "We look forward to working with you!\n\n" +
+
+                                        "Tony Greway\n" +
+                                        "Sentry Fire & Safety\n" +
+                                        "info@sentryfire.net\n" +
+                                        "(303)-294-0708\n\n" +
+                                        "-------- Customer Location Info ---------\n\n" );
+
+    }
+
+    public String getSchedulerEmail()
+    {
+       return getString(CAL_SCHEDULER_EMAIL, "tony.greway@sentryfire.net");
     }
 
     public Map<String, Integer> getItemTimeMinsMap()

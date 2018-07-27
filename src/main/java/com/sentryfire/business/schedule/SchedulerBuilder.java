@@ -13,28 +13,27 @@
  import java.util.List;
  import java.util.Map;
  import java.util.Set;
- import java.util.TreeMap;
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
  import java.util.stream.Collectors;
 
- import com.google.api.client.util.DateTime;
  import com.google.api.services.calendar.model.Event;
+ import com.google.api.services.calendar.model.EventAttendee;
+ import com.google.api.services.calendar.model.Events;
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
  import com.google.common.collect.Sets;
  import com.sentryfire.business.schedule.googlecalendar.CalendarManager;
  import com.sentryfire.business.schedule.googlecalendar.CalenderUtils;
- import com.sentryfire.business.schedule.model.Day;
  import com.sentryfire.business.schedule.model.EventTask;
  import com.sentryfire.business.schedule.model.MonthlyCalendar;
  import com.sentryfire.business.schedule.model.ScheduleCalendar;
  import com.sentryfire.business.utils.SerializerUtils;
- import com.sentryfire.config.AppConfiguartion;
  import com.sentryfire.config.TechProfile;
  import com.sentryfire.config.TechProfileConfiguration;
  import com.sentryfire.model.ItemStatHolder;
  import com.sentryfire.model.SKILL;
  import com.sentryfire.model.WO;
- import org.joda.time.MutableDateTime;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -44,6 +43,9 @@
 
     protected static CalendarManager calendarManager = CalendarManager.getInstance();
 
+    Pattern jobPattern = Pattern.compile("JOB-IN2:.*", Pattern.MULTILINE);
+
+
     public void buildAndInsertAllSchedules(org.joda.time.DateTime start)
     {
        // Google Maps stuff
@@ -52,8 +54,11 @@
 //       SerializerUtils.serializeList(rawList);
 
        List<WO> rawList = SerializerUtils.deWOSerializeList();
+
+       // Remove events that need to be rescheduled
+       List<Event> confirmed = getConfirmedAndClearUnconfirmed();
        // Filter out raw list
-       List<WO> woList = filterRawWOList(rawList);
+       List<WO> woList = filterRawWOList(rawList, confirmed);
 
 
        List<WO> denver = woList.stream().filter(w -> w.getDEPT().equals("DENVER")).collect(Collectors.toList());
@@ -138,104 +143,6 @@
        return completedWOList;
     }
 
-    @Deprecated
-    protected List<WO> scheduleTechForMonthOld(String tech,
-                                               List<SKILL> skills,
-                                               MonthlyCalendar calendar,
-                                               final List<WO> woList)
-    {
-       List<WO> completedWOList = Lists.newArrayList();
-
-       // Separate by city first
-       List<WO> techMasterList = woList.stream().filter(w -> hasRequiredSkills(w, skills)).collect(Collectors.toList());
-
-
-       EventTask nextSlot = calendar.getNextAvailableSlot();
-       while (nextSlot != null && !techMasterList.isEmpty())
-       {
-
-          Day taskDay = calendar.getMasterCalendar().get(nextSlot.getDayOfMonth());
-          Long gapInMinutes = (nextSlot.getEnd().getMillis() - nextSlot.getStart().getMillis()) / 1000 / 60;
-//          gapInMinutes -= AppConfiguartion.getInstance().getDriveTime();
-
-          WO wo = getNextBestWorkOrder(techMasterList, Math.toIntExact(gapInMinutes));
-          if (wo == null)
-          {
-             // No suitable work to match slot - mark free
-             nextSlot.setFree(true);
-          }
-          else
-          {
-             completedWOList.add(wo);
-             techMasterList.remove(wo);
-
-             Integer workTimeMins = wo.getMetaData().getWorkLoadMinutes();
-
-             if (workTimeMins <= 0)
-             {
-                // Still schedule them for now so they show in calendar and are not forgotten
-                log.error("WO has 0 workTime - jobNumber: " + wo.getIN2());
-             }
-
-             MutableDateTime endTime = new MutableDateTime(nextSlot.getStart());
-             endTime.addMinutes(workTimeMins);
-             nextSlot.setEnd(endTime.toDateTime());
-             nextSlot.setWo(wo);
-          }
-
-          taskDay.addEventTask(nextSlot);
-          nextSlot = calendar.getNextAvailableSlot();
-       }
-
-       log.info("Calendar Complete For Tech [" + tech + "]");
-       log.info(calendar.printCalendar(false));
-//       events.forEach(e -> log.info(e.getStart() + " : " + e.getEnd() + ": " + e.getSummary()));
-//       return events;
-       return completedWOList;
-    }
-
-    /**
-     * We need to be smart about how close they are to each other and the time available.
-     *
-     * @return null, will return null if there is no more work to be done
-     */
-    protected WO getNextBestWorkOrder(List<WO> availableWO,
-                                      int gapInMinutes)
-    {
-//       Map<String, List<WO>> cityToWO = availableWO.stream().collect(Collectors.groupingBy(w -> w.getCITY() == null ? "unknown" : w.getCITY(), Collectors.toList()));
-       Map<Integer, List<WO>> workTimeToWO = availableWO.stream().collect(Collectors.groupingBy(
-          w -> w.getMetaData().getWorkLoadMinutes(), Collectors.toList()
-       ));
-
-       int currentSelection = 0;
-       // Get closest by time gap trying to fill the entire window
-       for (Integer size : workTimeToWO.keySet())
-       {
-          if (size > gapInMinutes)
-          {
-             continue;
-          }
-          else if (size == gapInMinutes)
-          {
-             currentSelection = size;
-             break;
-          }
-          else if (size > currentSelection)
-          {
-             currentSelection = size;
-             continue;
-          }
-       }
-
-       if (currentSelection < 0 || workTimeToWO.get(currentSelection) == null || workTimeToWO.get(currentSelection).isEmpty())
-       {
-          log.error("No suitable WO for slot - " + gapInMinutes + " keys - " + workTimeToWO.keySet());
-          return null;
-       }
-
-       return workTimeToWO.get(currentSelection).get(0);
-    }
-
     /**
      * Separate out work by Skills and GEO Location
      */
@@ -293,7 +200,7 @@
        {
           List<ItemStatHolder> items = wo.getMetaData().getItemStatHolderList().stream().filter(i -> skill.equals(i.getSkill())).collect(Collectors.toList());
 
-          // Assign techs in round robin order unless there one is already on site
+          // Assign techs in round robin order unless one is already on site
           Set<String> availableAlreadyOnSite = availableTechs.stream().map(TechProfile::getName).collect(Collectors.toSet());
           availableAlreadyOnSite.retainAll(wo.getMetaData().getTechsOnSite());
 
@@ -320,88 +227,93 @@
        }
     }
 
-
-    // TODO
-    // PROBABLY DELETE THIS
-    protected ScheduleCalendar buildSchedulePerTech(Map<String, List<SKILL>> techToSkill,
-                                                    List<WO> woList,
-                                                    org.joda.time.DateTime start)
-    {
-       // Separate by city first
-       Map<String, List<WO>> cityToWO = woList.stream().collect(Collectors.groupingBy(w -> w.getCITY() == null ? "unknown" : w.getCITY(), Collectors.toList()));
-       Map<Integer, List<WO>> workTimeToWO = woList.stream().collect(Collectors.groupingBy(
-          w -> w.getMetaData().getItemStatHolderList().stream().mapToInt(ItemStatHolder::getMin).sum(), Collectors.toList()
-       ));
-       Map<Integer, List<WO>> sortedWorkTimeToWO = new TreeMap<>(workTimeToWO);
-
-//       sortedWorkTimeToWO.values().
-
-       System.out.println("Test");
-
-       return null;
-
-    }
-
     /////////////////////////////////////
     // Helpers
     /////////////////////////////////////
 
     protected void submitCalendarToGoogle(ScheduleCalendar calendar)
     {
-
        for (MonthlyCalendar cal : calendar.getTechCalendars().values())
        {
-//          if (cal.getTech().equals("BR") || cal.getTech().equals("ID") || cal.getTech().equals("MH"))
           {
-             List<Event> calendarEvents = monlthlyCalendarToEvents(cal);
+             List<Event> calendarEvents = CalenderUtils.monthlyCalendarToEvents(cal);
              calendarManager.bulkAddEvents(calendarEvents, cal.getTech());
           }
        }
     }
 
-    protected List<Event> monlthlyCalendarToEvents(MonthlyCalendar calendar)
+    protected List<Event> getConfirmedAndClearUnconfirmed()
     {
-       List<Event> events = Lists.newArrayList();
-
-       // Get All Event Tasks
-       List<EventTask> allEventsTasks = calendar.getAllEventTasks(true);
-
-       for (EventTask task : allEventsTasks)
+       List<Event> confirmedEvents = Lists.newArrayList();
+       for (String calName : CalendarManager.getInstance().getCalendarNameToID().keySet())
        {
-          String title;
-          String desc;
-          String location;
-          if (task.isLunch())
+          try
           {
-             title = "LUNCH";
-             desc = "LUNCH";
-             location = "LUNCH";
+             List<Event> removeEvents = Lists.newArrayList();
+             Events events = CalendarManager.getInstance().listEvents(calName);
+             for (Event e : events.getItems())
+             {
+                if (isProtectedEvent(e))
+                   confirmedEvents.add(e);
+                else
+                   removeEvents.add(e);
+             }
+             CalendarManager.getInstance().deleteEventList(calName, removeEvents);
+             log.info("Removed [" + removeEvents.size() + "] events from [" + calName + "].");
           }
-          else
+          catch (Exception e)
           {
-             WO wo = task.getWo();
-             title = wo.getNAME() + " : " + wo.getCN() + "-" + wo.getIN2();
-
-             List<String> itemDesc = wo.getMetaData().getItemStatHolderList().stream().map(
-                i -> i.getItemCode() + ":" + i.getCount()).collect(Collectors.toList());
-             desc = String.join(",", itemDesc);
-             location = wo.getADR1() + " " + wo.getCITY() + " " + wo.getZIP();
+             log.error("Failed to load/delete calendar for tech [" + calName + "].", e);
           }
-
-          DateTime start = new DateTime(task.getStart().toDate());
-          DateTime end = new DateTime(task.getEnd().toDate());
-          List<String> people = Lists.newArrayList("tony.greway@sentryfire.net");
-          Event event = CalenderUtils.createEvent(title, location, desc, start, end, null, people,
-                                                  AppConfiguartion.getInstance().getCalReminderMin(),
-                                                  null);
-          events.add(event);
        }
-       return events;
+
+       return confirmedEvents;
     }
 
-    protected List<WO> filterRawWOList(List<WO> raw)
+    protected boolean isProtectedEvent(Event e)
     {
-       return raw.stream().filter(w -> !isMonitoringMonthlyOnly(w)).collect(Collectors.toList());
+//       if (e.getDescription() != null && e.getDescription().contains(AUTO))
+       if (e.getDescription() != null)
+       {
+          if (e.getAttendees() != null)
+          {
+             for (EventAttendee a : e.getAttendees())
+             {
+                if (a.getResponseStatus() != null && "accepted".equals(a.getResponseStatus()))
+                   return true;
+             }
+          }
+          // Delete unconfirmed auto events
+          return false;
+       }
+       return true;
+    }
+
+    protected List<WO> filterRawWOList(List<WO> raw,
+                                       List<Event> confirmedEvents)
+    {
+       List<String> confirmedJobNumbers = Lists.newArrayList();
+       for (Event event : confirmedEvents)
+       {
+          if (event.getDescription() != null)
+          {
+             try
+             {
+                Matcher m = jobPattern.matcher(event.getDescription());
+                if (m.find())
+                {
+                   String[] matchArray = m.group().split(":");
+                   confirmedJobNumbers.add(matchArray[1].trim());
+                }
+             }
+             catch (Exception e)
+             {
+                log.error("Failed to parse the description of the event - unable to determine if it has a WO number.", e);
+             }
+          }
+       }
+       List<WO> filtered = raw.stream().filter(w -> !confirmedJobNumbers.contains(w.getIN2())).collect(Collectors.toList());
+       return filtered.stream().filter(w -> !isMonitoringMonthlyOnly(w)).collect(Collectors.toList());
     }
 
     protected boolean isMonitoringMonthlyOnly(WO wo)
@@ -421,17 +333,5 @@
        return false;
     }
 
-
-    protected boolean hasRequiredSkills(WO wo,
-                                        List<SKILL> skills)
-    {
-       for (ItemStatHolder holder : wo.getMetaData().getItemStatHolderList())
-       {
-          if (skills.contains(holder.getSkill()))
-             return true;
-       }
-
-       return false;
-    }
 
  }
