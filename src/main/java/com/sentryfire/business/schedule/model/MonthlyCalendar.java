@@ -16,9 +16,11 @@
  import java.util.TreeMap;
  import java.util.stream.Collectors;
 
+ import com.google.api.services.calendar.model.Event;
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
  import com.google.common.collect.Sets;
+ import com.sentryfire.business.schedule.googlecalendar.CalenderUtils;
  import com.sentryfire.model.ItemStatHolder;
  import com.sentryfire.model.WO;
  import org.joda.time.DateTime;
@@ -63,11 +65,31 @@
      */
     public EventTask scheduleWorkOrder(WO wo)
     {
+
+       return scheduleWorkOrder(wo, null);
+    }
+
+    public EventTask scheduleWorkOrder(WO wo,
+                                       DateTime scheduledStart)
+    {
        Integer timeForTechsItems = wo.getMetaData().getItemStatHolderList().stream().
           filter(i -> tech.equals(i.getTech())).mapToInt(ItemStatHolder::getMin).sum();
 
+       if (scheduledStart != null)
+       {
+          Day d = masterCalendar.get(scheduledStart.getDayOfMonth());
+          MutableDateTime endTime = new MutableDateTime(scheduledStart);
+          endTime.addMinutes(timeForTechsItems);
+
+          EventTask scheduledTask = new EventTask(wo, scheduledStart, endTime.toDateTime(), false);
+          scheduledTask.setEnd(endTime.toDateTime());
+          d.addEventTask(scheduledTask);
+          updateMaps(scheduledTask, d, wo);
+          return scheduledTask;
+       }
+
        // More than one day of work
-       Double daysOfWork = ((double) timeForTechsItems) / (DAY_IN_MINS_DBL);
+       double daysOfWork = ((double) timeForTechsItems) / (DAY_IN_MINS_DBL);
        if (daysOfWork >= 1.0)
        {
           return scheduleMultipleDayJob(wo, timeForTechsItems);
@@ -77,27 +99,16 @@
        return scheduleDailyTask(wo, timeForTechsItems);
     }
 
-    /**
-     * Will return null when the calendar is full for this tech
-     */
-    @Deprecated
-    public EventTask getNextAvailableSlot()
+    public void insertEventList(List<Event> events,
+                                Map<String, WO> in2ToWO)
     {
-       for (Day day : masterCalendar.values())
+       List<EventTask> eventTaskList = CalenderUtils.eventsToEventTaskList(events, in2ToWO);
+       for (EventTask task : eventTaskList)
        {
-          if (day.isWorkDay())
-          {
-             EventTask nextSlot = day.getNextAvailableEventTask();
-             if (nextSlot == null)
-             {
-                // Day is full go to next working day.
-                continue;
-             }
-             return nextSlot;
-          }
+          Day d = masterCalendar.get(task.getStart().getDayOfMonth());
+          d.addEventTask(task);
+          updateMaps(task, d, task.getWo());
        }
-
-       return null;
     }
 
     //////////////////////////////////////////
@@ -123,7 +134,7 @@
           scheduledTask = d.scheduleEventTaskMins(wo, timeForTechsItems);
           if (scheduledTask != null)
           {
-             updateMaps(scheduledTask, d);
+             updateMaps(scheduledTask, d, wo);
              return scheduledTask;
           }
        }
@@ -134,7 +145,7 @@
           scheduledTask = d.scheduleEventTaskMins(wo, timeForTechsItems);
           if (scheduledTask != null)
           {
-             updateMaps(scheduledTask, d);
+             updateMaps(scheduledTask, d, wo);
              return scheduledTask;
           }
        }
@@ -167,7 +178,7 @@
           else
              result = d.scheduleEventTaskMins(wo, timeLeft);
 
-          updateMaps(result, d);
+          updateMaps(result, d, wo);
        }
        return result;
     }
@@ -235,19 +246,29 @@
     //////////////////////////////////////////
 
     protected void updateMaps(EventTask scheduledTask,
-                              Day d)
+                              Day d,
+                              WO wo)
     {
        if (scheduledTask == null)
           return;
 
        freeDays.remove(d);
-       Set<Day> atLoc = daysAtLocation.get(scheduledTask.getWo().getCITY());
-       if (atLoc == null)
+
+       if (wo != null)
        {
-          atLoc = Sets.newHashSet();
-          daysAtLocation.put(scheduledTask.getWo().getCITY(), atLoc);
+          Set<Day> atLoc = daysAtLocation.get(scheduledTask.getWo().getCITY());
+          if (atLoc == null)
+          {
+             atLoc = Sets.newHashSet();
+             daysAtLocation.put(scheduledTask.getWo().getCITY(), atLoc);
+          }
+          atLoc.add(d);
+
+          // Add Event to Items that were scheduled
+          List<ItemStatHolder> techItems = wo.getMetaData().getItemStatHolderList().stream().filter(
+             i -> i.getTech() != null && i.getTech().equals(tech) && i.getScheduledStart() == null).collect(Collectors.toList());
+          techItems.forEach(i -> i.setScheduledStart(scheduledTask.getStart()));
        }
-       atLoc.add(d);
     }
 
     protected void populateMonthlyCalendar(DateTime start)

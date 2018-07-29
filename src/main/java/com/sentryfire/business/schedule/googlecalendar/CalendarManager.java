@@ -12,6 +12,8 @@
  import java.io.IOException;
  import java.io.InputStream;
  import java.io.InputStreamReader;
+ import java.security.GeneralSecurityException;
+ import java.util.Collection;
  import java.util.Collections;
  import java.util.List;
  import java.util.Map;
@@ -24,6 +26,7 @@
  import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
  import com.google.api.client.googleapis.batch.BatchRequest;
  import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+ import com.google.api.client.http.HttpTransport;
  import com.google.api.client.http.javanet.NetHttpTransport;
  import com.google.api.client.json.JsonFactory;
  import com.google.api.client.json.jackson2.JacksonFactory;
@@ -51,12 +54,9 @@
     private static final List<String> SCOPES = Collections.singletonList(CalendarScopes.CALENDAR);
     //    private static final String CLIENT_SECRET_FILE = "client_secret.json";
     private static final String CLIENT_SECRET_FILE = "sentry-scheduler-official.json";
+//    private static final String CLIENT_SECRET_FILE = "sentry-scheduler2.json";
 
     public static String CAL_NAME_PRIMARY = "primary";
-
-    public static String CAL_NAME_FIP = "FIP";
-    public static String CAL_NAME_GREELEY = "GREELEY";
-    public static String CAL_NAME_DENVER = "DENVER";
 
     protected static Map<String, String> calendarNameToID = Maps.newHashMap();
 
@@ -82,6 +82,9 @@
     public void bulkAddEvents(List<Event> events,
                               String calName)
     {
+       if (events == null || events.isEmpty())
+          return;
+
        try
        {
 
@@ -96,7 +99,7 @@
              }
              catch (Exception ex)
              {
-                log.error("Failed to submit event " + e.getId() + ", due to: ", e);
+                log.error("Failed to submit event " + e.getId() + ", due to: ", ex);
              }
           }
           batch.execute();
@@ -247,7 +250,7 @@
           .setServiceAccountPrivateKeyId(cr.getServiceAccountPrivateKeyId())
           .setTokenServerEncodedUrl(cr.getTokenServerEncodedUrl())
 //          .setServiceAccountUser("749725681897-jlg6po2hvl71e8lvtchno3h0r6qn0nvj.apps.googleusercontent.com")
-          .setServiceAccountUser("tony.greway@sentryfire.com");
+          .setServiceAccountUser("scheduler@sentryfire.com");
 //          .setClientSecrets("749725681897-jlg6po2hvl71e8lvtchno3h0r6qn0nvj.apps.googleusercontent.com", "y23iPYVUd2VDSxysVnLSxO4q");
 
 //                 GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream("MyProject-1234.json"))
@@ -257,6 +260,21 @@
 
        return builder.build();
 
+    }
+
+    public static GoogleCredential createCredentialForServiceAccount(
+       HttpTransport transport,
+       JsonFactory jsonFactory,
+       String serviceAccountId,
+       Collection<String> serviceAccountScopes,
+       File p12File) throws GeneralSecurityException, IOException
+    {
+       return new GoogleCredential.Builder().setTransport(transport)
+          .setJsonFactory(jsonFactory)
+          .setServiceAccountId(serviceAccountId)
+          .setServiceAccountScopes(serviceAccountScopes)
+          .setServiceAccountPrivateKeyFromP12File(p12File)
+          .build();
     }
 
     private static Credential getUserOauthCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException

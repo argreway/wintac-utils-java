@@ -13,8 +13,7 @@
  import java.util.List;
  import java.util.Map;
  import java.util.Set;
- import java.util.regex.Matcher;
- import java.util.regex.Pattern;
+ import java.util.function.Function;
  import java.util.stream.Collectors;
 
  import com.google.api.services.calendar.model.Event;
@@ -34,6 +33,7 @@
  import com.sentryfire.model.ItemStatHolder;
  import com.sentryfire.model.SKILL;
  import com.sentryfire.model.WO;
+ import org.joda.time.DateTime;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -42,8 +42,6 @@
     private Logger log = LoggerFactory.getLogger(getClass());
 
     protected static CalendarManager calendarManager = CalendarManager.getInstance();
-
-    Pattern jobPattern = Pattern.compile("JOB-IN2:.*", Pattern.MULTILINE);
 
 
     public void buildAndInsertAllSchedules(org.joda.time.DateTime start)
@@ -54,20 +52,22 @@
 //       SerializerUtils.serializeList(rawList);
 
        List<WO> rawList = SerializerUtils.deWOSerializeList();
+       Map<String, WO> in2ToWOList = rawList.stream().collect(Collectors.toMap(WO::getIN2, Function.identity()));
 
        // Remove events that need to be rescheduled
-       List<Event> confirmed = getConfirmedAndClearUnconfirmed();
+       Map<String, List<Event>> confirmed = getConfirmedAndClearUnconfirmed();
+
        // Filter out raw list
-       List<WO> woList = filterRawWOList(rawList, confirmed);
+       List<WO> woList = filterRawWOList(rawList, confirmed.values().stream().flatMap(List::stream).collect(Collectors.toList()));
 
 
        List<WO> denver = woList.stream().filter(w -> w.getDEPT().equals("DENVER")).collect(Collectors.toList());
        List<WO> greeley = woList.stream().filter(w -> w.getDEPT().equals("GREELEY")).collect(Collectors.toList());
        List<WO> cosprings = woList.stream().filter(w -> w.getDEPT().equals("CO_SPRINGS")).collect(Collectors.toList());
 
-       ScheduleCalendar denCalendar = buildSchedule(TechProfileConfiguration.getInstance().getDenTechToProfiles(), denver, start);
-//       ScheduleCalendar greCalendar = buildSchedule(TechProfileConfiguration.getInstance().getGreTechToProfiles(), greeley, start);
-//       ScheduleCalendar fipCalendar = buildSchedule(TechProfileConfiguration.getInstance().getFipTechToProfiles(), cosprings, start);
+       ScheduleCalendar denCalendar = buildSchedule(TechProfileConfiguration.getInstance().getDenTechToProfiles(), denver, start, in2ToWOList, confirmed);
+//       ScheduleCalendar greCalendar = buildSchedule(TechProfileConfiguration.getInstance().getGreTechToProfiles(), greeley, start, in2ToWOList, confirmed);
+//       ScheduleCalendar fipCalendar = buildSchedule(TechProfileConfiguration.getInstance().getFipTechToProfiles(), cosprings, start, in2ToWOList, confirmed);
 
        submitCalendarToGoogle(denCalendar);
 //       List<Event> calendarEvents = scheduleCalendarToEvents(fipCalendar);
@@ -82,10 +82,14 @@
 
     protected ScheduleCalendar buildSchedule(final Map<String, TechProfile> techToProfile,
                                              final List<WO> rawList,
-                                             final org.joda.time.DateTime calStart)
+                                             final org.joda.time.DateTime calStart,
+                                             final Map<String, WO> in2ToWOMap,
+                                             final Map<String, List<Event>> confirmedScheduled)
     {
        ScheduleCalendar scheduleCalendar = new ScheduleCalendar(techToProfile.keySet(), calStart);
 
+       // Update scheduled events (manually entered in google calendar or confirmed)
+       scheduleCalendar.insertScheduledEvents(confirmedScheduled, in2ToWOMap);
 
        List<WO> masterMonthList = Lists.newArrayList(rawList);
        Set<WO> completedList = Sets.newHashSet();
@@ -97,10 +101,7 @@
           String tech = techCal.getTech();
 
           List<WO> unScheduledList = distributedWOList.get(tech);
-//          List<SKILL> skills = techToProfile.get(tech).getSkills();
-//          List<WO> completedWO = scheduleTechForMonth(tech, skills, techCal, distributedWOList.get(tech));
           List<WO> completedWO = scheduleTechForMonth(techCal, distributedWOList.get(tech));
-
 
           masterMonthList.removeAll(completedWO);
           unScheduledList.removeAll(completedWO);
@@ -127,7 +128,28 @@
           (w1, w2) -> Integer.compare(w2.getMetaData().getWorkLoadMinutes(), w1.getMetaData().getWorkLoadMinutes())).
           collect(Collectors.toList());
 
-       for (WO wo : techMasterList)
+       // Schedule WOs that already have a tech on site first.
+       List<WO> scheduledList = techMasterList.stream().filter(
+          w -> w.getMetaData().getItemStatHolderList().stream().anyMatch(i -> i.getScheduledStart() != null)).
+          collect(Collectors.toList());
+
+       for (WO wo : scheduledList)
+       {
+          DateTime scheduledStart = wo.getMetaData().getItemStatHolderList().stream().filter(
+             i -> i.getScheduledStart() != null).findFirst().get().getScheduledStart();
+          EventTask timeSlot = calendar.scheduleWorkOrder(wo, scheduledStart);
+          if (timeSlot == null)
+          {
+             log.error("Could not schedule wo " + wo.getIN2() + " time: " + wo.getMetaData().getWorkLoadMinutes());
+             continue;
+          }
+          completedWOList.add(wo);
+       }
+
+       List<WO> unScheduled = Lists.newArrayList(techMasterList);
+       unScheduled.removeAll(scheduledList);
+
+       for (WO wo : unScheduled)
        {
           EventTask timeSlot = calendar.scheduleWorkOrder(wo);
           if (timeSlot == null)
@@ -242,9 +264,9 @@
        }
     }
 
-    protected List<Event> getConfirmedAndClearUnconfirmed()
+    protected Map<String, List<Event>> getConfirmedAndClearUnconfirmed()
     {
-       List<Event> confirmedEvents = Lists.newArrayList();
+       Map<String, List<Event>> confirmedEvents = Maps.newHashMap();
        for (String calName : CalendarManager.getInstance().getCalendarNameToID().keySet())
        {
           try
@@ -254,7 +276,7 @@
              for (Event e : events.getItems())
              {
                 if (isProtectedEvent(e))
-                   confirmedEvents.add(e);
+                   confirmedEvents.computeIfAbsent(calName, eList -> Lists.newArrayList()).add(e);
                 else
                    removeEvents.add(e);
              }
@@ -293,25 +315,7 @@
                                        List<Event> confirmedEvents)
     {
        List<String> confirmedJobNumbers = Lists.newArrayList();
-       for (Event event : confirmedEvents)
-       {
-          if (event.getDescription() != null)
-          {
-             try
-             {
-                Matcher m = jobPattern.matcher(event.getDescription());
-                if (m.find())
-                {
-                   String[] matchArray = m.group().split(":");
-                   confirmedJobNumbers.add(matchArray[1].trim());
-                }
-             }
-             catch (Exception e)
-             {
-                log.error("Failed to parse the description of the event - unable to determine if it has a WO number.", e);
-             }
-          }
-       }
+       confirmedEvents.forEach(e -> confirmedJobNumbers.add(CalenderUtils.getIN2FromEvent(e)));
        List<WO> filtered = raw.stream().filter(w -> !confirmedJobNumbers.contains(w.getIN2())).collect(Collectors.toList());
        return filtered.stream().filter(w -> !isMonitoringMonthlyOnly(w)).collect(Collectors.toList());
     }

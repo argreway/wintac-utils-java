@@ -204,7 +204,7 @@
 
     public String getSchedulerEmail()
     {
-       return getString(CAL_SCHEDULER_EMAIL, "tony.greway@sentryfire.net");
+       return getString(CAL_SCHEDULER_EMAIL, "scheduler@sentryfire.com");
     }
 
     public Map<String, Integer> getItemTimeMinsMap()

@@ -22,7 +22,11 @@
     private boolean isLunch;
     private boolean lunchBuildIn = false;
     private boolean isFree = false;
-    private boolean isDriving = false;
+    private boolean isScheduledEvent = false;
+
+    public EventTask()
+    {
+    }
 
     public EventTask(WO wo,
                      DateTime start,
@@ -85,14 +89,14 @@
        this.lunchBuildIn = lunchBuildIn;
     }
 
-    public boolean isDriving()
+    public boolean isScheduledEvent()
     {
-       return isDriving;
+       return isScheduledEvent;
     }
 
-    public void setDriving(boolean driving)
+    public void setScheduledEvent(boolean scheduledEvent)
     {
-       isDriving = driving;
+       isScheduledEvent = scheduledEvent;
     }
 
     public boolean isFree()
@@ -116,6 +120,19 @@
     }
 
     @Override
+    protected EventTask clone()
+    {
+       EventTask clone = new EventTask();
+       clone.setEnd(end);
+       clone.setStart(start);
+       clone.setLunchBuildIn(lunchBuildIn);
+       clone.setLunch(isLunch);
+       clone.setFree(isFree);
+       clone.setWo(wo);
+       return clone;
+    }
+
+    @Override
     public String toString()
     {
        return "EventTask{" +
@@ -125,7 +142,7 @@
               ", isLunch=" + isLunch +
               ", lunchBuildIn=" + lunchBuildIn +
               ", isFree=" + isFree +
-              ", isDriving=" + isDriving +
+              ", isScheduledEvent=" + isScheduledEvent +
               '}';
     }
  }

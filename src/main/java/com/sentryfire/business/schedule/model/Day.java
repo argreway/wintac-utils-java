@@ -32,10 +32,10 @@
     private Integer monthNumber;
     private Integer year;
 
-    private DateTime END_OF_DAY;
-    private DateTime BEGIN_OF_DAY;
-    private DateTime LUNCH_WINDOW_BEGIN;
-    private DateTime LUNCH_WINDOW_END;
+    protected DateTime END_OF_DAY;
+    protected DateTime BEGIN_OF_DAY;
+    protected DateTime LUNCH_WINDOW_BEGIN;
+    protected DateTime LUNCH_WINDOW_END;
 
     // Can be used for vacation or weekends
     private boolean isWorkDay = false;
@@ -115,20 +115,7 @@
 //          endTask.addMinutes(AppConfiguartion.getInstance().getLunchTime());
 //          task.setEnd(endTask.toDateTime());
        }
-//       if (includeLunch)
-//       {
-//          {
-//              Create lunch task and extend original task 30 minutes
-//             EventTask lunchTask = new EventTask(wo, getCurrentDayWithHourAndMin(12, 0).toDateTime(),
-//                                                 getCurrentDayWithHourAndMin(12, AppConfiguartion.getInstance().getLunchTime()).toDateTime(),
-//                                                 true);
-//             addEventTask(lunchTask);
-//
-//             MutableDateTime newEnd = new MutableDateTime(stop);
-//             newEnd.addMinutes(AppConfiguartion.getInstance().getLunchTime());
-//             task.setEnd(newEnd.toDateTime());
-//          }
-//       }
+
        addEventTask(task);
        return task;
     }
@@ -161,6 +148,8 @@
              taskEffectiveEnd.addMinutes(AppConfiguartion.getInstance().getDriveTime() / 2);
           else if (!taskEffectiveStart.isEqual(BEGIN_OF_DAY))
              taskEffectiveStart.addMinutes(-AppConfiguartion.getInstance().getDriveTime());
+          else if (taskEffectiveStart.isEqual(BEGIN_OF_DAY))
+             taskEffectiveEnd.addMinutes(AppConfiguartion.getInstance().getDriveTime());
 
           Integer currentGapMin = (int) (taskEffectiveStart.getMillis() - currentTime.getMillis()) / 1000 / 60;
           if (currentGapMin > 0)
@@ -170,7 +159,7 @@
           // End of Day
           if (!iter.hasNext())
           {
-             if (!task.isLunch())
+             if (!task.isLunch() && !task.getStart().isEqual(BEGIN_OF_DAY))
                 taskEffectiveEnd.addMinutes(AppConfiguartion.getInstance().getDriveTime());
              currentGapMin = (int) (END_OF_DAY.getMillis() - taskEffectiveEnd.getMillis()) / 1000 / 60;
              if (currentGapMin > 0)
@@ -179,137 +168,6 @@
        }
 
        return result;
-    }
-
-    /**
-     * Get the next available time window.
-     * Schedule lunch break if possible.
-     */
-    @Deprecated
-    public EventTask getNextAvailableEventTask()
-    {
-       Long minSlotGap = Integer.toUnsignedLong(AppConfiguartion.getInstance().getEmptyTimeSlotMinimumMin());
-
-       MutableDateTime start = getCurrentDayWithHourAndMin(
-          AppConfiguartion.getInstance().getBeginDayHour(),
-          AppConfiguartion.getInstance().getBeginDayMin());
-
-       if (eventTaskList.isEmpty())
-       {
-          MutableDateTime end = new MutableDateTime(LUNCH_WINDOW_END);
-          end.addMinutes(-AppConfiguartion.getInstance().getLunchTime());
-          return new EventTask(null, start.toDateTime(), end.toDateTime(), false);
-       }
-
-       Iterator<EventTask> itr = eventTaskList.values().iterator();
-       EventTask currentTask = itr.next();
-       EventTask futureTask = null;
-
-       while (currentTask != null)
-       {
-          if (itr.hasNext())
-          {
-             futureTask = itr.next();
-          }
-
-          // No more tasks for the day
-          if (futureTask == null)
-          {
-             // Check if we need to schedule a lunch
-             if (lunchAlreadyScheduled())
-             {
-                Long gapInMinutes = (END_OF_DAY.getMillis() - currentTask.getEnd().getMillis()) / 1000 / 60;
-                if (gapInMinutes < minSlotGap)
-                   return null;
-                // We must be past the lunch event so we have the rest of the day to schedule
-                return new EventTask(null, currentTask.getEnd(), END_OF_DAY, false);
-             }
-             else
-             {
-                if (LUNCH_WINDOW_BEGIN.isBefore(currentTask.getEnd()) && LUNCH_WINDOW_END.isAfter(currentTask.getEnd()))
-                {
-                   DateTime startLunch = currentTask.getEnd();
-                   MutableDateTime endLunch = new MutableDateTime(startLunch);
-                   endLunch.addMinutes(AppConfiguartion.getInstance().getLunchTime());
-
-                   EventTask lunch = new EventTask(null, startLunch, endLunch.toDateTime(), true);
-                   addEventTask(lunch);
-                   currentTask = lunch;
-                   futureTask = null;
-                   continue;
-                }
-                else if (LUNCH_WINDOW_BEGIN.isAfter(currentTask.getEnd()))
-                {
-                   // We have an available block up until the end of the lunch window minus lunch time
-                   MutableDateTime endSlot = new MutableDateTime(LUNCH_WINDOW_END);
-                   endSlot.addMinutes(-AppConfiguartion.getInstance().getLunchTime());
-                   return new EventTask(null, currentTask.getEnd(), endSlot.toDateTime(), false);
-                }
-                else
-                {
-                   Long gapInMinutes = (END_OF_DAY.getMillis() - currentTask.getEnd().getMillis()) / 1000 / 60;
-                   if (gapInMinutes < minSlotGap)
-                      return null;
-                   // We are past lunch just schedule to the end of the day
-                   return new EventTask(null, currentTask.getEnd(), END_OF_DAY, false);
-                }
-             }
-          }
-          else
-          {
-             // Check for available gaps
-             MutableDateTime nextSlotBegin = new MutableDateTime(currentTask.getEnd());
-             MutableDateTime nextSlotEnd = new MutableDateTime(futureTask.getStart());
-
-             Long gapInMinutes = (nextSlotEnd.getMillis() - nextSlotBegin.getMillis()) / 1000 / 60;
-
-             if (gapInMinutes < minSlotGap)
-             {
-                // Can't do anything interesting move on to the next slot
-                currentTask = futureTask;
-                futureTask = null;
-                continue;
-             }
-             else
-             {
-                if (lunchAlreadyScheduled())
-                {
-                   // If we have a lunch scheduled already just try to fill the whole block
-                   return new EventTask(null, nextSlotBegin.toDateTime(), nextSlotEnd.toDateTime(), false);
-                }
-                else
-                {
-                   if (LUNCH_WINDOW_BEGIN.isBefore(nextSlotEnd) && LUNCH_WINDOW_END.isAfter(nextSlotEnd))
-                   {
-                      DateTime startLunch = nextSlotBegin.toDateTime();
-                      MutableDateTime endLunch = new MutableDateTime(startLunch);
-                      endLunch.addMinutes(AppConfiguartion.getInstance().getLunchTime());
-
-                      EventTask lunch = new EventTask(null, startLunch, endLunch.toDateTime(), true);
-                      addEventTask(lunch);
-                      currentTask = lunch;
-                      futureTask = null;
-                      continue;
-                   }
-                   else if (LUNCH_WINDOW_BEGIN.isAfter(nextSlotBegin))
-                   {
-                      // We have an available block up until the end of the lunch window minus lunch time
-                      MutableDateTime endSlot = new MutableDateTime(LUNCH_WINDOW_END);
-                      endSlot.addMinutes(-AppConfiguartion.getInstance().getLunchTime());
-                      return new EventTask(null, nextSlotBegin.toDateTime(), endSlot.toDateTime(), false);
-                   }
-                   else
-                   {
-                      // Just schedule the whole block
-                      return new EventTask(null, nextSlotBegin.toDateTime(), nextSlotEnd.toDateTime(), false);
-                   }
-                }
-             }
-          }
-       }
-
-       // Return null if no slot available;
-       return null;
     }
 
     protected EventTask buildLunchTask(DateTime startLunch)

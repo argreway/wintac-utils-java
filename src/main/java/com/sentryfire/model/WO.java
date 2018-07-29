@@ -66,6 +66,16 @@
     protected String STATE;
     @Column (name = "ZIP")
     protected String ZIP;
+    @Column (name = "SAL")
+    protected String SAL;
+    @Column (name = "CST_TEL")
+    protected String CST_TEL;
+    @Column (name = "WIP_TEL")
+    protected String WIP_TEL;
+    @Column (name = "WIP_CELL")
+    protected String WIP_CELL;
+    @Column (name = "EMAIL")
+    protected String EMAIL;
 
     protected List<Item> lineItems;
 
@@ -322,6 +332,55 @@
        this.ZIP = ZIP;
     }
 
+    public String getSAL()
+    {
+       return SAL;
+    }
+
+    public void setSAL(String SAL)
+    {
+       this.SAL = SAL;
+    }
+
+    public String getCST_TEL()
+    {
+       return CST_TEL;
+    }
+
+    public void setCST_TEL(String CST_TEL)
+    {
+       this.CST_TEL = CST_TEL;
+    }
+
+    public String getWIP_TEL()
+    {
+       return WIP_TEL;
+    }
+
+    public void setWIP_TEL(String WIP_TEL)
+    {
+       this.WIP_TEL = WIP_TEL;
+    }
+
+    public String getWIP_CELL()
+    {
+       return WIP_CELL;
+    }
+
+    public void setWIP_CELL(String WIP_CELL)
+    {
+       this.WIP_CELL = WIP_CELL;
+    }
+
+    public String getEMAIL()
+    {
+       return EMAIL;
+    }
+
+    public void setEMAIL(String EMAIL)
+    {
+       this.EMAIL = EMAIL;
+    }
 
     @Override
     public boolean equals(Object o)
@@ -366,6 +425,11 @@
               ", CITY='" + CITY + '\'' +
               ", STATE='" + STATE + '\'' +
               ", ZIP='" + ZIP + '\'' +
+              ", SAL='" + SAL + '\'' +
+              ", CST_TEL='" + CST_TEL + '\'' +
+              ", WIP_TEL='" + WIP_TEL + '\'' +
+              ", WIP_CELL='" + WIP_CELL + '\'' +
+              ", EMAIL='" + EMAIL + '\'' +
               ", lineItems=" + lineItems +
               ", metaData=" + metaData +
               '}';

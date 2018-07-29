@@ -11,7 +11,7 @@
 
  import java.io.Serializable;
 
- import com.sentryfire.business.schedule.model.EventTask;
+import org.joda.time.DateTime;
 
  public class ItemStatHolder implements Serializable
  {
@@ -20,7 +20,7 @@
     protected String itemCode;
     protected SKILL skill;
     protected String tech;
-    protected EventTask eventTask;
+    protected DateTime scheduledStart;
 
     public ItemStatHolder(Integer min,
                           Integer count,
@@ -83,14 +83,14 @@
        this.tech = tech;
     }
 
-    public EventTask getEventTask()
+    public DateTime getScheduledStart()
     {
-       return eventTask;
+       return scheduledStart;
     }
 
-    public void setEventTask(EventTask eventTask)
+    public void setScheduledStart(DateTime scheduledStart)
     {
-       this.eventTask = eventTask;
+       this.scheduledStart = scheduledStart;
     }
 
     @Override
@@ -102,7 +102,7 @@
               ", itemCode='" + itemCode + '\'' +
               ", skill=" + skill +
               ", tech='" + tech + '\'' +
-              ", eventTask=" + eventTask +
+              ", scheduledStart=" + scheduledStart +
               '}';
     }
  }

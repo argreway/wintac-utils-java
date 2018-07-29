@@ -221,7 +221,7 @@
                                              DateTime end,
                                              int rcvForm)
     {
-       String selectString = "SELECT CST.CN, CST.NAME, RCV.CITY, RCV.STATE, RCV.ZIP, RCV.ADR1, RCV.INVRMK, RCV.DEPT, RCV.NAME, RCV.IN2, RCV.JDATE, RCV.COUNTER, RCVN.RCVNKey, RCVT.TECH, RCV.SUBTOTAL, RCV.TOTTAX, RCV.TOTTAX2, RCV.MAT, RCV.LAB, RCV.MATC, RCV.LABC " +
+       String selectString = "SELECT CST.CN, CST.SAL, CST.EMAIL, CST.NAME, CST.TEL as CST_TEL, RCV.TEL as WIP_TEL, RCV.FAX as WIP_CELL, RCV.CITY, RCV.STATE, RCV.ZIP, RCV.ADR1, RCV.INVRMK, RCV.DEPT, RCV.NAME, RCV.IN2, RCV.JDATE, RCV.COUNTER, RCVN.RCVNKey, RCVT.TECH, RCV.SUBTOTAL, RCV.TOTTAX, RCV.TOTTAX2, RCV.MAT, RCV.LAB, RCV.MATC, RCV.LABC " +
                              "FROM RCV, RCVT, RCVN, CST " +
                              "WHERE (" +
                              "(((((RCV.FRM = " + rcvForm + " ) AND (NOT((RCV.JSTAT = '*' )) OR (RCV.JSTAT IS NULL ))) " +
