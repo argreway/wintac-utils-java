@@ -57,6 +57,8 @@ import org.slf4j.LoggerFactory;
 //       ExcelWritter excelWritter = new ExcelWritter();
 //       excelWritter.writeSpreadSheet(columns, rows);
 
+//          CalendarManager.getInstance().deleteAllCalendarEvents("BR");
+
 
           MutableDateTime start = new MutableDateTime();
           start.setYear(2018);

@@ -12,6 +12,7 @@
  import java.util.List;
  import java.util.Map;
  import java.util.Objects;
+ import java.util.Random;
  import java.util.Set;
  import java.util.TreeMap;
  import java.util.stream.Collectors;
@@ -127,7 +128,13 @@
 
        List<Day> locationDaysToTry = Lists.newArrayList(locationDays);
        if (!freeDays.isEmpty())
-          locationDaysToTry.add(freeDays.get(0));
+       {
+          Random rand = new Random();
+          // Randomize free days so heavy work load is not always at the beginning
+          int dayNumber = rand.nextInt(freeDays.size());
+//          int dayNumber = 0;
+          locationDaysToTry.add(freeDays.get(dayNumber));
+       }
 
        for (Day d : locationDaysToTry)
        {

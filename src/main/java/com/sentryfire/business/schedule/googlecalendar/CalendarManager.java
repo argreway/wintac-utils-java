@@ -53,8 +53,8 @@
 
     private static final List<String> SCOPES = Collections.singletonList(CalendarScopes.CALENDAR);
     //    private static final String CLIENT_SECRET_FILE = "client_secret.json";
-    private static final String CLIENT_SECRET_FILE = "sentry-scheduler-official.json";
-//    private static final String CLIENT_SECRET_FILE = "sentry-scheduler2.json";
+//    private static final String CLIENT_SECRET_FILE = "sentry-scheduler-official.json";
+    private static final String CLIENT_SECRET_FILE = "sentry-scheduler2.json";
 
     public static String CAL_NAME_PRIMARY = "primary";
 
