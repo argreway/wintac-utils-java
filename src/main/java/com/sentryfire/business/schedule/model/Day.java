@@ -39,6 +39,7 @@
 
     // Can be used for vacation or weekends
     private boolean isWorkDay = false;
+    private boolean isCleared = false;
 
     // Sorted by start time
     TreeMap<Float, EventTask> eventTaskList = new TreeMap<>();
@@ -210,7 +211,7 @@
        Float key = Float.parseFloat(eventTask.getStart().getHourOfDay() + "." +
                                     String.format("%02d", eventTask.getStart().getMinuteOfHour()));
        if (eventTaskList.containsKey(key))
-          log.error("This should never happen but we have the same key in the map " + key);
+          log.error("This should never happen but we have the same key in the map " + key + " day: " + dayNumber);
 
        eventTaskList.put(key, eventTask);
     }
@@ -243,6 +244,16 @@
     public void setYear(Integer year)
     {
        this.year = year;
+    }
+
+    public boolean isCleared()
+    {
+       return isCleared;
+    }
+
+    public void setCleared(boolean cleared)
+    {
+       isCleared = cleared;
     }
 
     //////////////////////////////////

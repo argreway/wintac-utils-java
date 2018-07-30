@@ -107,8 +107,17 @@
        for (EventTask task : eventTaskList)
        {
           Day d = masterCalendar.get(task.getStart().getDayOfMonth());
-          d.addEventTask(task);
-          updateMaps(task, d, task.getWo());
+          if (task.isClearedDay())
+          {
+             d.setCleared(true);
+             d.setWorkDay(false);
+             freeDays.remove(d);
+          }
+          else
+          {
+             d.addEventTask(task);
+             updateMaps(task, d, task.getWo());
+          }
        }
     }
 
@@ -318,7 +327,9 @@
        for (Day day : masterCalendar.values())
        {
           buffer.append("Day [").append(day.getDayNumber()).append("]");
-          if (!day.isWorkDay())
+          if (day.isCleared())
+             buffer.append("  -> CLEARED/VACATION/FREE\n");
+          else if (!day.isWorkDay())
              buffer.append("  -> NOT A WORK DAY\n");
           else
           {
@@ -327,8 +338,6 @@
              {
                 if (task.isLunch())
                    buffer.append("\t\tTask: LUNCH\n");
-                else if (task.isFree())
-                   buffer.append("\t\tTask: FREE\n");
                 else
                 {
                    buffer.append("\t\tTask: ").append(formatter.print(task.getStart())).append("\t").

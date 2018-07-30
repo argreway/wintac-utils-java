@@ -21,8 +21,8 @@
     private DateTime end;
     private boolean isLunch;
     private boolean lunchBuildIn = false;
-    private boolean isFree = false;
     private boolean isScheduledEvent = false;
+    private boolean clearedDay = false;
 
     public EventTask()
     {
@@ -99,14 +99,14 @@
        isScheduledEvent = scheduledEvent;
     }
 
-    public boolean isFree()
+    public boolean isClearedDay()
     {
-       return isFree;
+       return clearedDay;
     }
 
-    public void setFree(boolean free)
+    public void setClearedDay(boolean clearedDay)
     {
-       isFree = free;
+       this.clearedDay = clearedDay;
     }
 
     public Integer getDayOfMonth()
@@ -120,19 +120,6 @@
     }
 
     @Override
-    protected EventTask clone()
-    {
-       EventTask clone = new EventTask();
-       clone.setEnd(end);
-       clone.setStart(start);
-       clone.setLunchBuildIn(lunchBuildIn);
-       clone.setLunch(isLunch);
-       clone.setFree(isFree);
-       clone.setWo(wo);
-       return clone;
-    }
-
-    @Override
     public String toString()
     {
        return "EventTask{" +
@@ -141,8 +128,8 @@
               ", end=" + end +
               ", isLunch=" + isLunch +
               ", lunchBuildIn=" + lunchBuildIn +
-              ", isFree=" + isFree +
               ", isScheduledEvent=" + isScheduledEvent +
+              ", clearedDay=" + clearedDay +
               '}';
     }
  }

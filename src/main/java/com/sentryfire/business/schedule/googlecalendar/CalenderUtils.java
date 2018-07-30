@@ -26,6 +26,7 @@
  import com.sentryfire.business.schedule.model.MonthlyCalendar;
  import com.sentryfire.config.AppConfiguartion;
  import com.sentryfire.model.WO;
+ import org.joda.time.MutableDateTime;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -116,6 +117,53 @@
        {
           try
           {
+             MutableDateTime start;
+             if (e.getStart().getDate() != null)
+             {
+                if (e.getStart().getDate().isDateOnly())
+                {
+                   start = new MutableDateTime(e.getStart().getDate().getValue());
+                   start.setHourOfDay(0);
+                   start.addDays(1);
+                }
+                else
+                   start = new MutableDateTime(e.getStart().getDate().getValue());
+             }
+             else
+                start = new MutableDateTime(e.getStart().getDateTime().getValue());
+
+             MutableDateTime end;
+             if (e.getEnd().getDate() != null)
+             {
+                if (e.getEnd().getDate().isDateOnly())
+                {
+                   end = new MutableDateTime(e.getEnd().getDate().getValue());
+                   end.setHourOfDay(23);
+                }
+                else
+                   end = new MutableDateTime(e.getEnd().getDate().getValue());
+             }
+             else
+                end = new MutableDateTime(e.getEnd().getDateTime().getValue());
+
+             // Handle vacation/cleared days (ie cleared so other work can be done like an install)
+             if (start.getHourOfDay() <= 5 && end.getHourOfDay() >= 20 ||
+                 (start.getDayOfMonth() != end.getDayOfMonth()))
+             {
+                // Handle google ending all day event on 0:0:0 of the next day
+                if (end.getHourOfDay() == 0 && end.getMinuteOfHour() == 0)
+                   end.addHours(-1);
+                MutableDateTime current = new MutableDateTime(start);
+                while (current.getDayOfMonth() <= end.getDayOfMonth())
+                {
+                   EventTask task = new EventTask(null, current.toDateTime(), current.toDateTime(), false);
+                   task.setClearedDay(true);
+                   result.add(task);
+                   current.addDays(1);
+                }
+                continue;
+             }
+
              String in2 = getIN2FromEvent(e);
 
              WO wo = null;
@@ -126,9 +174,7 @@
              if (e.getSummary() != null && e.getSummary().contains("LUNCH"))
                 isLunch = true;
 
-             org.joda.time.DateTime start = new org.joda.time.DateTime(e.getStart().getDateTime().getValue());
-             org.joda.time.DateTime end = new org.joda.time.DateTime(e.getEnd().getDateTime().getValue());
-             EventTask task = new EventTask(wo, start, end, isLunch);
+             EventTask task = new EventTask(wo, start.toDateTime(), end.toDateTime(), isLunch);
              task.setScheduledEvent(true);
              result.add(task);
           }

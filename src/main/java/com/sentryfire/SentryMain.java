@@ -57,10 +57,11 @@
 //       ExcelWritter excelWritter = new ExcelWritter();
 //       excelWritter.writeSpreadSheet(columns, rows);
 
+//          Events es = CalendarManager.getInstance().listEvents("DH");
 //          for (String tech : TechProfileConfiguration.getInstance().getDenTechToProfiles().keySet())
 //          {
 //
-//             if (!tech.equals("ID"))
+//             if (!tech.equals("CG"))
 //             {
 //                log.info("Deleting " + tech);
 //                CalendarManager.getInstance().deleteAllCalendarEvents(tech);
