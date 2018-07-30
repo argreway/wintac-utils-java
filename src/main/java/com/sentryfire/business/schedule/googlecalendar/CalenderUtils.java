@@ -89,6 +89,24 @@
        return event;
     }
 
+    public static boolean isProtectedEvent(Event e)
+    {
+       if (e.getDescription() != null && e.getDescription().contains(AUTO))
+       {
+          if (e.getAttendees() != null)
+          {
+             for (EventAttendee a : e.getAttendees())
+             {
+                if (a.getResponseStatus() != null && "accepted".equals(a.getResponseStatus()))
+                   return true;
+             }
+          }
+          // Delete unconfirmed auto events
+          return false;
+       }
+       return true;
+    }
+
     public static List<EventTask> eventsToEventTaskList(List<Event> events,
                                                         Map<String, WO> in2ToWO)
     {
@@ -165,6 +183,7 @@
           {
              title = "LUNCH";
              desc = "LUNCH";
+             desc += "\n\n" + AUTO;
              location = "LUNCH";
           }
           else
@@ -200,7 +219,8 @@
              location = wo.getADR1() + " " + wo.getCITY() + " " + wo.getZIP();
           }
           title = title.replace("_", " ");
-          desc = desc.replace("_", " ");
+          // Description has emails with underscores etc
+//          desc = desc.replace("_", " ");
           location = location.replace("_", " ");
 
           DateTime start = new DateTime(task.getStart().toDate());

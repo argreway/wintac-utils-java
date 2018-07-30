@@ -53,8 +53,8 @@
 
     private static final List<String> SCOPES = Collections.singletonList(CalendarScopes.CALENDAR);
     //    private static final String CLIENT_SECRET_FILE = "client_secret.json";
-//    private static final String CLIENT_SECRET_FILE = "sentry-scheduler-official.json";
-    private static final String CLIENT_SECRET_FILE = "sentry-scheduler2.json";
+    private static final String CLIENT_SECRET_FILE = "sentry-scheduler-official.json";
+//    private static final String CLIENT_SECRET_FILE = "sentry-scheduler2.json";
 
     public static String CAL_NAME_PRIMARY = "primary";
 
@@ -87,9 +87,6 @@
 
        try
        {
-
-          // Batches of size one seem to still work if we are getting throttled?
-//          for (Event e : events.stream().limit(1).collect(Collectors.toList()))
           BatchRequest batch = service.batch();
           for (Event e : events)
           {
@@ -132,13 +129,20 @@
        return service.calendarList().list().execute();
     }
 
+    /**
+     * not sure why some events end up becoming recurring events?
+     */
     public Events listEvents(String calName) throws Exception
     {
-       return service.events().list(getCalID(calName)).execute();
+//       return service.events().list(getCalID(calName)).execute();
+       return service.events().list(getCalID(calName)).setSingleEvents(true).execute();
     }
 
     public void deleteAllCalendarEvents(String calName) throws Exception
     {
+       if (getCalID(calName) == null)
+          return;
+
        Events eventList = service.events().list(getCalID(calName)).execute();
        if (eventList == null || eventList.getItems() == null || eventList.getItems().isEmpty())
           return;
@@ -221,12 +225,8 @@
              TechProfile profile = TechProfileConfiguration.getInstance().getDenTechToProfiles().get(entry.getSummary());
              if (profile != null)
                 calendarNameToID.put(profile.getName(), entry.getId());
-//             if (CAL_NAME_FIP.equals(entry.getSummary()))
-//                calendarNameToID.put(CAL_NAME_FIP, entry.getId());
-//             else if (CAL_NAME_GREELEY.equals(entry.getSummary()))
-//                calendarNameToID.put(CAL_NAME_GREELEY, entry.getId());
-//             else if (CAL_NAME_DENVER.equals(entry.getSummary()))
-//                calendarNameToID.put(CAL_NAME_DENVER, entry.getId());
+//             if (entry.isPrimary())
+//                calendarNameToID.put(CAL_NAME_PRIMARY, entry.getId());
           }
           log.info("Mapped the following calendars to IDs: " + calendarNameToID);
        }
@@ -249,14 +249,8 @@
           .setServiceAccountPrivateKey(cr.getServiceAccountPrivateKey())
           .setServiceAccountPrivateKeyId(cr.getServiceAccountPrivateKeyId())
           .setTokenServerEncodedUrl(cr.getTokenServerEncodedUrl())
-//          .setServiceAccountUser("749725681897-jlg6po2hvl71e8lvtchno3h0r6qn0nvj.apps.googleusercontent.com")
           .setServiceAccountUser("scheduler@sentryfire.com");
 //          .setClientSecrets("749725681897-jlg6po2hvl71e8lvtchno3h0r6qn0nvj.apps.googleusercontent.com", "y23iPYVUd2VDSxysVnLSxO4q");
-
-//                 GoogleCredential credential = GoogleCredential.fromStream(new FileInputStream("MyProject-1234.json"))
-//       GoogleCredential credential = GoogleCredential.fromStream(CalendarManager.class.getClassLoader().getResourceAsStream(CLIENT_SECRET_FILE))
-//          .createScoped(SCOPES);
-//       return credential;
 
        return builder.build();
 

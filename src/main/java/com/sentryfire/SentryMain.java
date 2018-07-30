@@ -10,17 +10,17 @@
  package com.sentryfire;
 
  import java.util.Arrays;
-import java.util.List;
+ import java.util.List;
 
-import com.google.common.collect.Lists;
-import com.sentryfire.business.schedule.SchedulerBuilder;
-import com.sentryfire.config.AppConfiguartion;
-import com.sentryfire.gui.GUIManager;
-import com.sentryfire.persistance.DAOFactory;
-import com.sentryfire.timers.StatsTimer;
-import org.joda.time.MutableDateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+ import com.google.common.collect.Lists;
+ import com.sentryfire.business.schedule.SchedulerBuilder;
+ import com.sentryfire.config.AppConfiguartion;
+ import com.sentryfire.gui.GUIManager;
+ import com.sentryfire.persistance.DAOFactory;
+ import com.sentryfire.timers.StatsTimer;
+ import org.joda.time.MutableDateTime;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
 
  public class SentryMain
  {
@@ -57,8 +57,18 @@ import org.slf4j.LoggerFactory;
 //       ExcelWritter excelWritter = new ExcelWritter();
 //       excelWritter.writeSpreadSheet(columns, rows);
 
-//          CalendarManager.getInstance().deleteAllCalendarEvents("BR");
+//          for (String tech : TechProfileConfiguration.getInstance().getDenTechToProfiles().keySet())
+//          {
+//
+//             if (!tech.equals("ID"))
+//             {
+//                log.info("Deleting " + tech);
+//                CalendarManager.getInstance().deleteAllCalendarEvents(tech);
+//             }
+//          }
 
+//          GoogleMapsClient maps = new GoogleMapsClient();
+//          maps.matrix();
 
           MutableDateTime start = new MutableDateTime();
           start.setYear(2018);
@@ -70,8 +80,6 @@ import org.slf4j.LoggerFactory;
 
           SchedulerBuilder schedulerBuilder = new SchedulerBuilder();
           schedulerBuilder.buildAndInsertAllSchedules(start.toDateTime());
-
-//          BalanceFinder.searchHistoryForIncorrectDate();
 
           DAOFactory.shutdown();
        }

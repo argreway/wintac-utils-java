@@ -17,7 +17,6 @@
  import java.util.stream.Collectors;
 
  import com.google.api.services.calendar.model.Event;
- import com.google.api.services.calendar.model.EventAttendee;
  import com.google.api.services.calendar.model.Events;
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
@@ -275,7 +274,7 @@
              Events events = CalendarManager.getInstance().listEvents(calName);
              for (Event e : events.getItems())
              {
-                if (isProtectedEvent(e))
+                if (CalenderUtils.isProtectedEvent(e))
                    confirmedEvents.computeIfAbsent(calName, eList -> Lists.newArrayList()).add(e);
                 else
                    removeEvents.add(e);
@@ -290,25 +289,6 @@
        }
 
        return confirmedEvents;
-    }
-
-    protected boolean isProtectedEvent(Event e)
-    {
-//       if (e.getDescription() != null && e.getDescription().contains(AUTO))
-       if (e.getDescription() != null)
-       {
-          if (e.getAttendees() != null)
-          {
-             for (EventAttendee a : e.getAttendees())
-             {
-                if (a.getResponseStatus() != null && "accepted".equals(a.getResponseStatus()))
-                   return true;
-             }
-          }
-          // Delete unconfirmed auto events
-          return false;
-       }
-       return true;
     }
 
     protected List<WO> filterRawWOList(List<WO> raw,
@@ -336,6 +316,5 @@
        }
        return false;
     }
-
 
  }

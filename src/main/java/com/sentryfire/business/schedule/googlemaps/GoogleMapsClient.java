@@ -15,13 +15,22 @@
  import java.util.Set;
  import java.util.stream.Collectors;
 
+ import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
  import com.google.common.collect.Sets;
  import com.google.gson.Gson;
  import com.google.gson.GsonBuilder;
+ import com.google.maps.DirectionsApi;
+ import com.google.maps.DistanceMatrixApi;
+ import com.google.maps.DistanceMatrixApiRequest;
  import com.google.maps.GeoApiContext;
  import com.google.maps.GeocodingApi;
+ import com.google.maps.model.DistanceMatrix;
+ import com.google.maps.model.DistanceMatrixElement;
+ import com.google.maps.model.DistanceMatrixRow;
  import com.google.maps.model.GeocodingResult;
+ import com.google.maps.model.TravelMode;
+ import com.google.maps.model.Unit;
  import com.sentryfire.config.AppConfiguartion;
  import com.sentryfire.config.ExternalConfiguartion;
  import com.sentryfire.model.Item;
@@ -145,7 +154,7 @@
        List<WO> rc = techToWo.get("RC");
     }
 
-    protected void map()
+    public void map()
     {
        try
        {
@@ -165,6 +174,55 @@
        }
 
 
+    }
+
+    public void matrix()
+    {
+       try
+       {
+          GeoApiContext context = new GeoApiContext.Builder()
+             .apiKey(ExternalConfiguartion.getInstance().getGoogleMapApiKey()).build();
+
+          DistanceMatrixApiRequest req = DistanceMatrixApi.newRequest(context);
+
+          List<String> origArray = Lists.newArrayList();
+          origArray.add("1294 South Inca St Denver CO 80023");
+          origArray.add("9104 Ellis Way Arvada CO 80005");
+//          String orig1 = "9104 Ellis Way Arvada CO 80005";
+
+          List<String> destArray = Lists.newArrayList();
+          destArray.add("5386 Dunraven Cir Golden CO 80403");
+//          destArray.add("12020 Airport Way Broomfield CO 80021");
+          destArray.add("1294 S Broadway Denver CO 80210");
+
+          DistanceMatrix matrix = req.origins(origArray.toArray(new String[0]))
+             .destinations(destArray.toArray(new String[0]))
+             .mode(TravelMode.DRIVING)
+             .units(Unit.IMPERIAL)
+             .avoid(DirectionsApi.RouteRestriction.TOLLS).await();
+
+          int oIdx = 0;
+          for (DistanceMatrixRow row : matrix.rows)
+          {
+             int dIdx = 0;
+             for (DistanceMatrixElement element : row.elements)
+             {
+                log.error("From: " + origArray.get(oIdx) + " To: " + destArray.get(dIdx));
+                log.error("Distance:  " + element.distance);
+                log.error("Duration: " + element.duration);
+                log.error("InTraffic: " + element.durationInTraffic);
+                log.error("Fare: " + element.fare);
+                log.error("Status: " + element.status);
+                log.error("------------------------------");
+                dIdx++;
+             }
+             oIdx++;
+          }
+       }
+       catch (Exception e)
+       {
+          log.error("Failed to query matrix API: ", e);
+       }
     }
 
     public List<WO> getWorkOrderList(DateTime start)
