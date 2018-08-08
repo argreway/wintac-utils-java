@@ -13,6 +13,7 @@
    <modules>
       <module>standalone</module>
       <module>webapp</module>
+      <module>jettyrunner</module>
    </modules>
 
    <properties>
@@ -159,6 +160,8 @@
                <source>${project.java.version}</source>
                <target>${project.java.version}</target>
                <encoding>${project.build.sourceEncoding}</encoding>
+               <debug>true</debug>
+               <debuglevel>lines,vars,source</debuglevel>
             </configuration>
          </plugin>
       </plugins>

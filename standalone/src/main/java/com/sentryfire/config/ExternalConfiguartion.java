@@ -27,7 +27,7 @@
     //*******************//
     // File Location
     //*******************//
-    public static final String CONFIG_FILE = "sentry-config.properties";
+    public static final String CONFIG_FILE = "conf/sentry-config.properties";
 
     //*******************//
     // Properties

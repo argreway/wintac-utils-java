@@ -1,0 +1,12 @@
+#div-console {
+    border-style: double;
+    padding: 20px;
+    background-color: #eeeeee;
+    overflow-y: auto;
+}
+
+.cmsg {
+    padding: 0px;
+    margin: 0px;
+    background-color: antiquewhite;
+}

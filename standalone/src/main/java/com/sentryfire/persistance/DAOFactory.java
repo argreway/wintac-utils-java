@@ -40,14 +40,11 @@
 
     synchronized public static DBConnect sqlDB()
     {
-       if (!dbConnect.isConnected())
-       {
-          DAOFactory.sqlDB().connectToDB(
-             ExternalConfiguartion.getInstance().getServer(),
-             ExternalConfiguartion.getInstance().getDatabase(),
-             ExternalConfiguartion.getInstance().getUser(),
-             ExternalConfiguartion.getInstance().getPassword());
-       }
+       dbConnect.connectToDB(
+          ExternalConfiguartion.getInstance().getServer(),
+          ExternalConfiguartion.getInstance().getDatabase(),
+          ExternalConfiguartion.getInstance().getUser(),
+          ExternalConfiguartion.getInstance().getPassword());
        return dbConnect;
     }
 

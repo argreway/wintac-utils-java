@@ -44,7 +44,11 @@
        synchronized (this)
        {
           if (isConnected)
+          {
+             log.info("Already connected.");
              return;
+          }
+
           try
           {
              Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
@@ -64,11 +68,6 @@
              log.error(message, ex);
           }
        }
-    }
-
-    public boolean isConnected()
-    {
-       return isConnected;
     }
 
     public DefaultTableModel getCustomerList()

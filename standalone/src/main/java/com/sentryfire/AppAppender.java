@@ -11,13 +11,22 @@
 
  import java.io.IOException;
  import java.io.OutputStream;
+ import java.util.List;
 
+ import com.google.common.collect.Lists;
  import com.sentryfire.gui.GUIManager;
  import org.apache.log4j.Layout;
  import org.apache.log4j.WriterAppender;
 
  public class AppAppender extends WriterAppender
  {
+    static List<LoggableApp> registeredApps = Lists.newArrayList();
+
+    public static void registerAppLog(LoggableApp app)
+    {
+       registeredApps.add(app);
+    }
+
     /**
      * Constructs an unconfigured appender.
      */
@@ -78,10 +87,17 @@
                          final int len)
           throws IOException
        {
+          String full = new String(b);
+          String message = full.substring(off, off + len);
+
           if (GUIManager.isGUI())
           {
-             String full = new String(b);
-             GUIManager.logMessage(full.substring(off, off + len));
+             GUIManager.logMessage(message);
+          }
+
+          for (LoggableApp app : registeredApps)
+          {
+             app.writeMessage(message);
           }
        }
 
@@ -92,6 +108,15 @@
              System.err.write(b);
              GUIManager.logMessage("" + b);
           }
+          for (LoggableApp app : registeredApps)
+          {
+             app.writeMessage("" + b);
+          }
        }
+    }
+
+    public interface LoggableApp
+    {
+       public void writeMessage(String message);
     }
  }

@@ -31,12 +31,12 @@
                   <resource>
                      <!-- this is relative to the pom.xml directory -->
                      <directory>../standalone/ext-resource</directory>
-                     <targetPath>conf</targetPath>
+                     <targetPath>WEB-INF/classes/conf</targetPath>
                   </resource>
                   <resource>
                      <!-- this is relative to the pom.xml directory -->
                      <directory>../standalone/conf</directory>
-                     <targetPath>conf</targetPath>
+                     <targetPath>WEB-INF/classes/conf</targetPath>
                   </resource>
                </webResources>
             </configuration>
@@ -48,7 +48,7 @@
    <dependencies>
       <dependency>
          <groupId>com.sentryfire</groupId>
-         <artifactId>business</artifactId>
+         <artifactId>standalone</artifactId>
          <version>1.0-SNAPSHOT</version>
       </dependency>
       <dependency>
