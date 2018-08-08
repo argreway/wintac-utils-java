@@ -22,7 +22,27 @@
                <war>${project.basedir}/target/webapp-1.0-SNAPSHOT</war>
             </configuration>
          </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-war-plugin</artifactId>
+            <version>3.2.2</version>
+            <configuration>
+               <webResources>
+                  <resource>
+                     <!-- this is relative to the pom.xml directory -->
+                     <directory>../standalone/ext-resource</directory>
+                     <targetPath>conf</targetPath>
+                  </resource>
+                  <resource>
+                     <!-- this is relative to the pom.xml directory -->
+                     <directory>../standalone/conf</directory>
+                     <targetPath>conf</targetPath>
+                  </resource>
+               </webResources>
+            </configuration>
+         </plugin>
       </plugins>
+
    </build>
 
    <dependencies>

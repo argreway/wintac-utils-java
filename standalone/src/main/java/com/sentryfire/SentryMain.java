@@ -10,17 +10,16 @@
  package com.sentryfire;
 
  import java.util.Arrays;
- import java.util.List;
+import java.util.List;
 
- import com.google.common.collect.Lists;
- import com.sentryfire.business.schedule.SchedulerBuilder;
- import com.sentryfire.config.AppConfiguartion;
- import com.sentryfire.gui.GUIManager;
- import com.sentryfire.persistance.DAOFactory;
- import com.sentryfire.timers.StatsTimer;
- import org.joda.time.MutableDateTime;
- import org.slf4j.Logger;
- import org.slf4j.LoggerFactory;
+import com.google.common.collect.Lists;
+import com.sentryfire.business.schedule.SchedulerBuilder;
+import com.sentryfire.gui.GUIManager;
+import com.sentryfire.persistance.DAOFactory;
+import com.sentryfire.timers.StatsTimer;
+import org.joda.time.MutableDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
  public class SentryMain
  {
@@ -36,13 +35,6 @@
     {
        try
        {
-          AppConfiguartion.getInstance();
-//          DAOFactory.sqlDB().connectToDB(
-//             ExternalConfiguartion.getInstance().getServer(),
-//             ExternalConfiguartion.getInstance().getDatabase(),
-//             ExternalConfiguartion.getInstance().getUser(),
-//             ExternalConfiguartion.getInstance().getPassword());
-
           // Robo Dialer
 //       DailerManager manager = new DailerManager();
 //       manager.start();

@@ -13,8 +13,6 @@
  import java.util.Timer;
 import java.util.concurrent.TimeUnit;
 
-import com.sentryfire.config.ExternalConfiguartion;
-import com.sentryfire.persistance.DAOFactory;
 import org.joda.time.MutableDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,12 +44,6 @@ import org.slf4j.LoggerFactory;
        timer.schedule(timerTask, next.toDate(), period);
 
        log.info("TimerTask started - connecting to DB.");
-
-       DAOFactory.sqlDB().connectToDB(
-          ExternalConfiguartion.getInstance().getServer(),
-          ExternalConfiguartion.getInstance().getDatabase(),
-          ExternalConfiguartion.getInstance().getUser(),
-          ExternalConfiguartion.getInstance().getPassword());
 
        // Start timer run every day at 3am
        log.info("Timer to run at : " + next + ", interval: " + period);

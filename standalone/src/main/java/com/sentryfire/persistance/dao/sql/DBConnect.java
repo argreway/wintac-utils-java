@@ -34,29 +34,41 @@
 
     protected DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd");
 
+    private static boolean isConnected = false;
 
     public void connectToDB(String server,
                             String db,
                             String user,
                             String password)
     {
-       try
+       synchronized (this)
        {
-          Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+          if (isConnected)
+             return;
+          try
+          {
+             Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 
 
-          String connectionString = "jdbc:sqlserver://" + server + ";DatabaseName=" + db;
-          log.info("Connecting to the DB: " + connectionString);
+             String connectionString = "jdbc:sqlserver://" + server + ";DatabaseName=" + db;
+             log.info("Connecting to the DB: " + connectionString);
 
-          cnn = DriverManager.getConnection(connectionString, user, password);
-          String message = "Connection was successful!";
-          log.info(message);
+             cnn = DriverManager.getConnection(connectionString, user, password);
+             String message = "Connection was successful!";
+             isConnected = true;
+             log.info(message);
+          }
+          catch (Exception ex)
+          {
+             String message = "Can not open connection !";
+             log.error(message, ex);
+          }
        }
-       catch (Exception ex)
-       {
-          String message = "Can not open connection !";
-          log.error(message, ex);
-       }
+    }
+
+    public boolean isConnected()
+    {
+       return isConnected;
     }
 
     public DefaultTableModel getCustomerList()
@@ -340,17 +352,21 @@
 
     public void closeDBConnection()
     {
-       try
+       synchronized (this)
        {
-          if (cnn != null)
-             cnn.close();
+          try
+          {
+             if (cnn != null)
+                cnn.close();
+          }
+          catch (Exception e)
+          {
+             log.error("Failed to close connection to DB!", e);
+             return;
+          }
+          log.info("Closed connection to DB!");
+          isConnected = false;
        }
-       catch (Exception e)
-       {
-          log.error("Failed to close connection to DB!", e);
-          return;
-       }
-       log.info("Closed connection to DB!");
     }
 
  }

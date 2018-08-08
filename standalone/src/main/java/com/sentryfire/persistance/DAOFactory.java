@@ -9,10 +9,11 @@
 
  package com.sentryfire.persistance;
 
+ import com.sentryfire.config.ExternalConfiguartion;
  import com.sentryfire.persistance.dao.influxdb.ARDao;
- import com.sentryfire.persistance.dao.influxdb.InfluxAdminDao;
  import com.sentryfire.persistance.dao.influxdb.HistoryDao;
  import com.sentryfire.persistance.dao.influxdb.ITEMDao;
+ import com.sentryfire.persistance.dao.influxdb.InfluxAdminDao;
  import com.sentryfire.persistance.dao.influxdb.InfluxClient;
  import com.sentryfire.persistance.dao.influxdb.PAYDao;
  import com.sentryfire.persistance.dao.influxdb.WIPDao;
@@ -35,11 +36,18 @@
     private static WIPDao wipDao = new WIPDao();
 
 
-
     //// Getters
 
-    public static DBConnect sqlDB()
+    synchronized public static DBConnect sqlDB()
     {
+       if (!dbConnect.isConnected())
+       {
+          DAOFactory.sqlDB().connectToDB(
+             ExternalConfiguartion.getInstance().getServer(),
+             ExternalConfiguartion.getInstance().getDatabase(),
+             ExternalConfiguartion.getInstance().getUser(),
+             ExternalConfiguartion.getInstance().getPassword());
+       }
        return dbConnect;
     }
 
