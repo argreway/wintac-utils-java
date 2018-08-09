@@ -54,9 +54,8 @@
     private static final String CREDENTIALS_FOLDER = "/tmp/credentials"; // Directory to store user credentials.
 
     private static final List<String> SCOPES = Collections.singletonList(CalendarScopes.CALENDAR);
-    //    private static final String CLIENT_SECRET_FILE = "client_secret.json";
-    private static final String CLIENT_SECRET_FILE = "conf/sentry-scheduler-official.json";
-//    private static final String CLIENT_SECRET_FILE = "sentry-scheduler2.json";
+    private static final String SECRET_FILE = "sentry-scheduler-official.json";
+    private static final String CLIENT_SECRET_FILE = "conf/" + SECRET_FILE;
 
     public static String CAL_NAME_PRIMARY = "primary";
 
@@ -167,7 +166,7 @@
        BatchRequest batch = service.batch();
        for (Event e : items)
        {
-          System.out.println("Deleting Event " + e.getId());
+          log.info("Deleting Event " + e.getId());
           service.events().delete(getCalID(calName), e.getId()).queue(batch, new VoidCallBack());
        }
        batch.execute();
@@ -275,9 +274,19 @@
 
     private static Credential getServiceAccountCredentials(final NetHttpTransport HTTP_TRANSPORT) throws IOException
     {
-       GoogleCredential cr = GoogleCredential
-          .fromStream(CalendarManager.class.getClassLoader().getResourceAsStream(CLIENT_SECRET_FILE))
-          .createScoped(SCOPES);
+       GoogleCredential cr;
+       try
+       {
+          cr = GoogleCredential
+             .fromStream(CalendarManager.class.getClassLoader().getResourceAsStream(CLIENT_SECRET_FILE))
+             .createScoped(SCOPES);
+       }
+       catch (Exception e)
+       {
+          cr = GoogleCredential
+             .fromStream(CalendarManager.class.getClassLoader().getResourceAsStream(SECRET_FILE))
+             .createScoped(SCOPES);
+       }
        GoogleCredential.Builder builder = new GoogleCredential.Builder()
           .setTransport(HTTP_TRANSPORT)
           .setJsonFactory(JSON_FACTORY)

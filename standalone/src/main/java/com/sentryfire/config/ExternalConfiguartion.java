@@ -9,16 +9,13 @@
 
  package com.sentryfire.config;
 
- import java.io.FileInputStream;
- import java.io.FileNotFoundException;
- import java.io.IOException;
  import java.io.InputStream;
- import java.util.List;
- import java.util.Properties;
+import java.util.List;
+import java.util.Properties;
 
- import com.google.common.collect.Lists;
- import org.slf4j.Logger;
- import org.slf4j.LoggerFactory;
+import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
  public class ExternalConfiguartion extends BaseConfiguration
  {
@@ -27,7 +24,8 @@
     //*******************//
     // File Location
     //*******************//
-    public static final String CONFIG_FILE = "conf/sentry-config.properties";
+    public static final String FILE = "sentry-config.properties";
+    public static final String CONFIG_FILE = "conf/" + FILE;
 
     //*******************//
     // Properties
@@ -50,33 +48,25 @@
     {
        if (instance == null)
        {
-          instance = new ExternalConfiguartion(CONFIG_FILE);
+          instance = new ExternalConfiguartion();
        }
        return instance;
     }
 
-    public ExternalConfiguartion() throws FileNotFoundException, IOException
+    public ExternalConfiguartion()
     {
-       this.fileName = CONFIG_FILE;
-       properties = new Properties();
-       FileInputStream input = new FileInputStream(fileName);
-       properties.load(input);
-    }
-
-    public ExternalConfiguartion(final String fileName)
-    {
-       this.fileName = fileName;
-
        properties = new Properties();
 
        try
        {
-          InputStream input = getClass().getClassLoader().getResourceAsStream(fileName);
+          InputStream input = getClass().getClassLoader().getResourceAsStream(CONFIG_FILE);
+          if(input == null)
+             input = getClass().getClassLoader().getResourceAsStream(FILE);
           properties.load(input);
        }
        catch (Exception e)
        {
-          log.error("Failed to load the configuration file: " + fileName + ".", e);
+          log.error("Failed to load the configuration file: " + CONFIG_FILE + ".", e);
 
        }
     }

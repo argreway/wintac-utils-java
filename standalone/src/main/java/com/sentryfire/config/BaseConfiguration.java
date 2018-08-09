@@ -23,7 +23,6 @@
     Logger log = LoggerFactory.getLogger(getClass());
 
     protected Properties properties;
-    protected String fileName;
 
 
     //*******************//

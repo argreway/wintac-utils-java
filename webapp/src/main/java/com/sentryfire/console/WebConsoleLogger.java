@@ -29,7 +29,8 @@
           {
              try
              {
-                s.getBasicRemote().sendText(message);
+                if (s.isOpen())
+                   s.getBasicRemote().sendText(message);
              }
              catch (Exception e)
              {

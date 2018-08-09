@@ -9,9 +9,6 @@
 
  package com.sentryfire.config;
 
- import java.io.FileInputStream;
- import java.io.FileNotFoundException;
- import java.io.IOException;
  import java.io.InputStream;
  import java.util.Arrays;
  import java.util.List;
@@ -37,7 +34,8 @@
     //*******************//
     // File Location
     //*******************//
-    public static final String CONFIG_FILE = "conf/sentry-app.properties";
+    public static final String FILE = "sentry-app.properties";
+    public static final String CONFIG_FILE = "conf/" + FILE;
 
     //*******************//
     // Properties
@@ -73,44 +71,27 @@
     {
        if (instance == null)
        {
-          instance = new AppConfiguartion(CONFIG_FILE);
+          instance = new AppConfiguartion();
           instance.getItemTimeMinsMap();
           instance.getItemToSkill();
        }
        return instance;
     }
 
-    public AppConfiguartion() throws FileNotFoundException, IOException
+    public AppConfiguartion()
     {
-       this.fileName = CONFIG_FILE;
-       properties = new Properties();
-       FileInputStream input = new FileInputStream(fileName);
-       properties.load(input);
-    }
-
-    public AppConfiguartion(final String fileName)
-    {
-       this.fileName = fileName;
-
        properties = new Properties();
 
        try
        {
-          FileInputStream input = new FileInputStream(fileName);
+          InputStream input = getClass().getClassLoader().getResourceAsStream(CONFIG_FILE);
+          if (input == null)
+             input = getClass().getClassLoader().getResourceAsStream(FILE);
           properties.load(input);
        }
        catch (Exception e)
        {
-          try
-          {
-             InputStream input = getClass().getClassLoader().getResourceAsStream(fileName);
-             properties.load(input);
-          }
-          catch (Exception e2)
-          {
-             log.error("Failed to load the configuration file: " + fileName + ".", e);
-             log.error("Failed to load the configuration file from classpath: " + fileName + ".", e2);
-          }
+          log.error("Failed to load the configuration file: " + CONFIG_FILE + ".", e);
        }
     }
 
@@ -198,7 +179,7 @@
                                         "Sentry Fire & Safety\n" +
                                         "info@com.sentryfire.net\n" +
                                         "(303)-294-0708\n\n" +
-                                        "-------- Customer Location Info ---------\n\n" );
+                                        "-------- Customer Location Info ---------\n\n");
 
     }
 

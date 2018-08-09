@@ -31,6 +31,7 @@
     // File Location
     //*******************//
     public static final String CONFIG_DIR = "conf/profiles/";
+    public static final String PROF_DIR = "profiles/";
 
     protected Map<String, TechProfile> denTechToProfile = Maps.newHashMap();
     protected Map<String, TechProfile> greTechToProfile = Maps.newHashMap();
@@ -111,12 +112,20 @@
        try
        {
           File cwd = new File(".");
-          System.out.println("Cwd: " + cwd.getAbsolutePath());
+          log.info("Cwd: " + cwd.getAbsolutePath());
           PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
           // Ant-style path matching
-          Resource[] resources = resolver.getResources(CONFIG_DIR + "**");
 
+          Resource[] resources;
+          try
+          {
+             resources = resolver.getResources(CONFIG_DIR + "**");
+          }
+          catch (Exception e)
+          {
+             resources = resolver.getResources(PROF_DIR + "**");
+          }
 
           if (resources == null || resources.length <= 0)
           {

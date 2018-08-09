@@ -271,7 +271,8 @@
 
           DateTime start = new DateTime(task.getStart().toDate());
           DateTime end = new DateTime(task.getEnd().toDate());
-          List<String> people = Lists.newArrayList(AppConfiguartion.getInstance().getSchedulerEmail());
+//          List<String> people = Lists.newArrayList(AppConfiguartion.getInstance().getSchedulerEmail());
+          List<String> people = null;
           Event event = CalenderUtils.createEvent(title, location, desc, start, end, null, people,
                                                   AppConfiguartion.getInstance().getCalReminderMin(),
                                                   AppConfiguartion.getInstance().getCalReminderMin());
