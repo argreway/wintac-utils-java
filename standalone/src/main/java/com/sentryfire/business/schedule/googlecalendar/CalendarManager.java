@@ -17,6 +17,7 @@
  import java.util.Collections;
  import java.util.List;
  import java.util.Map;
+ import java.util.stream.Collectors;
 
  import com.google.api.client.auth.oauth2.Credential;
  import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
@@ -30,6 +31,7 @@
  import com.google.api.client.http.javanet.NetHttpTransport;
  import com.google.api.client.json.JsonFactory;
  import com.google.api.client.json.jackson2.JacksonFactory;
+ import com.google.api.client.util.DateTime;
  import com.google.api.client.util.store.FileDataStoreFactory;
  import com.google.api.services.calendar.Calendar;
  import com.google.api.services.calendar.CalendarScopes;
@@ -53,7 +55,7 @@
 
     private static final List<String> SCOPES = Collections.singletonList(CalendarScopes.CALENDAR);
     //    private static final String CLIENT_SECRET_FILE = "client_secret.json";
-    private static final String CLIENT_SECRET_FILE = "sentry-scheduler-official.json";
+    private static final String CLIENT_SECRET_FILE = "conf/sentry-scheduler-official.json";
 //    private static final String CLIENT_SECRET_FILE = "sentry-scheduler2.json";
 
     public static String CAL_NAME_PRIMARY = "primary";
@@ -140,20 +142,55 @@
 
     public void deleteAllCalendarEvents(String calName) throws Exception
     {
+       deleteAllCalendarEvents(calName, null, null);
+    }
+
+    public void deleteAllCalendarEvents(String calName,
+                                        DateTime start,
+                                        DateTime end) throws Exception
+    {
        if (getCalID(calName) == null)
           return;
 
-       Events eventList = service.events().list(getCalID(calName)).execute();
+       Events eventList = listEvents(calName);
        if (eventList == null || eventList.getItems() == null || eventList.getItems().isEmpty())
           return;
 
+       List<Event> items = eventList.getItems();
+       // Filter down to time range
+       if (start != null && end != null)
+          items = items.stream().filter(e -> isInTimeRange(e, start, end)).collect(Collectors.toList());
+
+       if (items.isEmpty())
+          return;
+
        BatchRequest batch = service.batch();
-       for (Event e : eventList.getItems())
+       for (Event e : items)
        {
           System.out.println("Deleting Event " + e.getId());
           service.events().delete(getCalID(calName), e.getId()).queue(batch, new VoidCallBack());
        }
        batch.execute();
+    }
+
+    protected boolean isInTimeRange(Event e,
+                                    DateTime start,
+                                    DateTime end)
+    {
+       if (e.getStart() == null)
+          return true;
+
+       DateTime time = e.getStart().getDateTime();
+       if (time != null && time.getValue() <= end.getValue() &&
+           time.getValue() >= start.getValue())
+          return true;
+
+       time = e.getStart().getDate();
+       if (time != null && time.getValue() <= end.getValue() &&
+           time.getValue() >= start.getValue())
+          return true;
+
+       return false;
     }
 
     public void deleteEventList(String calName,
@@ -249,7 +286,7 @@
           .setServiceAccountPrivateKey(cr.getServiceAccountPrivateKey())
           .setServiceAccountPrivateKeyId(cr.getServiceAccountPrivateKeyId())
           .setTokenServerEncodedUrl(cr.getTokenServerEncodedUrl())
-          .setServiceAccountUser("scheduler@com.sentryfire.com");
+          .setServiceAccountUser("scheduler@sentryfire.com");
 //          .setClientSecrets("749725681897-jlg6po2hvl71e8lvtchno3h0r6qn0nvj.apps.googleusercontent.com", "y23iPYVUd2VDSxysVnLSxO4q");
 
        return builder.build();

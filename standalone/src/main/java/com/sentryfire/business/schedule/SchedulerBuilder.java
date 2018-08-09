@@ -23,6 +23,7 @@
  import com.google.common.collect.Sets;
  import com.sentryfire.business.schedule.googlecalendar.CalendarManager;
  import com.sentryfire.business.schedule.googlecalendar.CalenderUtils;
+ import com.sentryfire.business.schedule.googlemaps.GoogleMapsClient;
  import com.sentryfire.business.schedule.model.EventTask;
  import com.sentryfire.business.schedule.model.MonthlyCalendar;
  import com.sentryfire.business.schedule.model.ScheduleCalendar;
@@ -46,11 +47,11 @@
     public void buildAndInsertAllSchedules(org.joda.time.DateTime start)
     {
        // Google Maps stuff
-//       GoogleMapsClient googleMapsClient = new GoogleMapsClient();
-//       List<WO> rawList = googleMapsClient.route(start);
-//       SerializerUtils.serializeList(rawList);
+       GoogleMapsClient googleMapsClient = new GoogleMapsClient();
+       List<WO> rawList = googleMapsClient.route(start);
+       SerializerUtils.serializeList(rawList);
 
-       List<WO> rawList = SerializerUtils.deWOSerializeList();
+//       List<WO> rawList = SerializerUtils.deWOSerializeList();
        Map<String, WO> in2ToWOList = rawList.stream().collect(Collectors.toMap(WO::getIN2, Function.identity()));
 
        // Remove events that need to be rescheduled

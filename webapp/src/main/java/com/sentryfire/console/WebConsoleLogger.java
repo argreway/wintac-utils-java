@@ -33,7 +33,8 @@
              }
              catch (Exception e)
              {
-                log.error("Failed to send console message due to: ", e);
+                e.printStackTrace();
+                System.out.println("Failed to send console message due to: " + e);
              }
           }
        }

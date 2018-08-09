@@ -10,7 +10,7 @@
  package com.sentryfire.config;
 
  import java.io.File;
- import java.io.FileInputStream;
+ import java.io.InputStream;
  import java.util.List;
  import java.util.Map;
  import java.util.Properties;
@@ -19,6 +19,8 @@
  import com.google.common.collect.Maps;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
+ import org.springframework.core.io.Resource;
+ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
  public class TechProfileConfiguration extends BaseConfiguration
  {
@@ -106,46 +108,57 @@
 
     protected void loadProfiles()
     {
-       File cwd = new File(".");
-       System.out.println("Cwd: " + cwd.getAbsolutePath());
-       File configDir = new File(CONFIG_DIR);
-       if (!configDir.exists() || configDir.listFiles() == null || configDir.listFiles().length <= 0)
+       try
        {
-          log.error("Tech config dir does not exist: " + CONFIG_DIR);
-          return;
+          File cwd = new File(".");
+          System.out.println("Cwd: " + cwd.getAbsolutePath());
+          PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+
+          // Ant-style path matching
+          Resource[] resources = resolver.getResources(CONFIG_DIR + "**");
+
+
+          if (resources == null || resources.length <= 0)
+          {
+             log.error("Tech config dir does not exist: " + CONFIG_DIR);
+             return;
+          }
+
+          for (Resource resource : resources)
+          {
+             try
+             {
+                Properties properties = new Properties();
+                InputStream input = resource.getInputStream();
+                properties.load(input);
+
+                TechProfile profile = new TechProfile();
+                profile.setName(getString(NAME, properties));
+                profile.setDivision(getString(DIVISION, properties));
+                profile.setSkills(getSkillList(SKILLS, properties));
+                profile.setScheduleSkills(getSkillList(SCHEDULE_SKILLS, properties));
+                profile.setCustomerPref(getStringList(CUSTOMER_PREF, Lists.newArrayList(), properties));
+                profile.setHome(getString(HOME, properties));
+                profile.setTerritory(getString(TERRITORY, properties));
+                profile.setEmail(getString(EMAIL, properties));
+
+                if (profile.getDivision().equals("DENVER"))
+                   denTechToProfile.put(profile.getName(), profile);
+                else if (profile.getDivision().equals("GREELEY"))
+                   greTechToProfile.put(profile.getName(), profile);
+                else if (profile.getDivision().equals("FIP"))
+                   fipTechToProfile.put(profile.getName(), profile);
+                log.info("Loaded Profile [" + profile.getName() + "]");
+             }
+             catch (Exception e)
+             {
+                log.error("Failed to load properties for Tech Profile: " + resource);
+             }
+          }
        }
-
-
-       for (File file : configDir.listFiles())
+       catch (Exception e)
        {
-          try
-          {
-             Properties properties = new Properties();
-             FileInputStream input = new FileInputStream(file.getCanonicalPath());
-             properties.load(input);
-
-             TechProfile profile = new TechProfile();
-             profile.setName(getString(NAME, properties));
-             profile.setDivision(getString(DIVISION, properties));
-             profile.setSkills(getSkillList(SKILLS, properties));
-             profile.setScheduleSkills(getSkillList(SCHEDULE_SKILLS, properties));
-             profile.setCustomerPref(getStringList(CUSTOMER_PREF, Lists.newArrayList(), properties));
-             profile.setHome(getString(HOME, properties));
-             profile.setTerritory(getString(TERRITORY, properties));
-             profile.setEmail(getString(EMAIL, properties));
-
-             if (profile.getDivision().equals("DENVER"))
-                denTechToProfile.put(profile.getName(), profile);
-             else if (profile.getDivision().equals("GREELEY"))
-                greTechToProfile.put(profile.getName(), profile);
-             else if (profile.getDivision().equals("FIP"))
-                fipTechToProfile.put(profile.getName(), profile);
-             log.info("Loaded Profile [" + profile.getName() + "]");
-          }
-          catch (Exception e)
-          {
-             log.error("Failed to load properties for Tech Profile: " + file);
-          }
+          log.error("Failed to load the tech profiles.", e);
        }
     }
 

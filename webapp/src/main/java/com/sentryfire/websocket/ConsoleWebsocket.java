@@ -43,7 +43,7 @@
                                                   InterruptedException
     {
        if (message != null && message.equals("ping"))
-          log.info("Recieved keep-alive");
+          log.debug("Received keep-alive");
        else
           log.info("Client browser sent message: " + message);
     }

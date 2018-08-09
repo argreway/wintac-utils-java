@@ -15,7 +15,8 @@ webSocket.onmessage = function (event) {
 function onMessage(event)
 {
     $('#div-console').append('<p class="cmsg">' + event.data.replace(/(\r\n|\n|\r)/gm, " ") + '</p>');
-    $('#div-console').animate({scrollTop: $('#div-console').prop("scrollHeight")}, 500);
+    // $('#div-console').animate({scrollTop: $('#div-console').prop("scrollHeight")}, 5);
+    // $('#div-console').scrollTop =  $('#div-console').prop("scrollHeight");
 }
 
 function onOpen(event)

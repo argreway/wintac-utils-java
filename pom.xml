@@ -116,6 +116,12 @@
          <artifactId>jetty-server</artifactId>
          <version>${jettyVersion}</version>
       </dependency>
+
+      <dependency>
+         <groupId>org.springframework</groupId>
+         <artifactId>spring-core</artifactId>
+         <version>3.1.2.RELEASE</version>
+      </dependency>
    </dependencies>
 
 

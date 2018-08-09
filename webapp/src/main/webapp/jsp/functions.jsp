@@ -10,10 +10,20 @@
     WebUtilities webUtilities = new WebUtilities();
     if (request.getParameter("activity-log") != null)
     {
-        webUtilities.getActivityLog();
+        String begingDate = request.getParameter("beginDate");
+        String endDate = request.getParameter("endDate");
+        webUtilities.getActivityLog(begingDate, endDate);
     }
-    else if (request.getParameter("") != null)
+    else if (request.getParameter("build-schedule") != null)
     {
-
+        String begingDate = request.getParameter("beginDate");
+        String endDate = request.getParameter("endDate");
+        webUtilities.buildSchedule(begingDate, endDate);
+    }
+    else if (request.getParameter("delete-schedule") != null)
+    {
+        String begingDate = request.getParameter("beginDate");
+        String endDate = request.getParameter("endDate");
+        webUtilities.deleteSchedule(begingDate, endDate);
     }
 %>
