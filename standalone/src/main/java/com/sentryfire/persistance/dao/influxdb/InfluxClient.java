@@ -380,9 +380,9 @@
     public QueryResult query(String queryString)
     {
        Query query = new Query(queryString, dbName);
-       log.info("BEGIN query [" + queryString + "]");
+       log.debug("BEGIN query [" + queryString + "]");
        QueryResult result = influxDB.query(query);
-       log.info("END query.");
+       log.debug("END query.");
        return result;
 
     }

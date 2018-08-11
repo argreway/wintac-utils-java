@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../css/header.css">
     <link rel="stylesheet" href="../css/console.css">
     <link rel="stylesheet" href="../css/scheduler.css">
+    <link rel="stylesheet" href="../css/maps.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
     <link rel="shortcut icon" href="../images/logo_transparent.png"/>
@@ -50,11 +51,19 @@
         </div>
     </div>
 
-    <button class="accordion">Console Logger</button>
+    <button class="accordion">Maps</button>
     <div id="panel3" class="panel">
+        <div id="panel-maps-content"></div>
+    </div>
+
+    <button class="accordion">Console Logger</button>
+    <div id="panel4" class="panel">
         <div id="div-console" style="overflow:scroll; height:400px;"></div>
     </div>
-</div>
+
+    <button class="accordion">Notes/Help</button>
+    <div id="panel5" class="panel">
+    </div>
 </div>
 
 <!-- Run after building components-->

@@ -21,6 +21,7 @@
 
     protected List<ItemStatHolder> itemStatHolderList = Lists.newArrayList();
 
+    ///////////// Getter/Setter ////////////
     public List<ItemStatHolder> getItemStatHolderList()
     {
        return itemStatHolderList;

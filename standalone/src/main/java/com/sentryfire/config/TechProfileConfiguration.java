@@ -157,13 +157,15 @@
                    greTechToProfile.put(profile.getName(), profile);
                 else if (profile.getDivision().equals("FIP"))
                    fipTechToProfile.put(profile.getName(), profile);
-                log.info("Loaded Profile [" + profile.getName() + "]");
              }
              catch (Exception e)
              {
                 log.error("Failed to load properties for Tech Profile: " + resource);
              }
           }
+          log.info("Loaded DEN Profiles [" + denTechToProfile.keySet() + "]");
+          log.info("Loaded GRE Profiles [" + greTechToProfile.keySet() + "]");
+          log.info("Loaded FIP Profiles [" + fipTechToProfile.keySet() + "]");
        }
        catch (Exception e)
        {

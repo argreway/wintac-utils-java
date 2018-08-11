@@ -51,7 +51,7 @@
          <fileMode>0644</fileMode>
       </fileSet>
       <fileSet>
-         <directory>../ext-resource</directory>
+         <directory>ext-resource</directory>
          <outputDirectory>${componentName}/conf</outputDirectory>
          <includes>
             <include>*.*</include>
