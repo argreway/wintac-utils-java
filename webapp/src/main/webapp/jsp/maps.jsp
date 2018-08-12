@@ -1,12 +1,5 @@
-<%@ page import="com.sentryfire.model.WO" %>
-<%@ page import="com.sentryfire.WebUtilities" %>
-<%@ page import="com.sentryfire.business.schedule.SchedulerBuilder" %>
-<%@ page import="com.sentryfire.business.schedule.googlecalendar.CalenderUtils" %>
 <%@ page import="com.sentryfire.config.TechProfileConfiguration" %>
 <%@ page import="com.sentryfire.config.ExternalConfiguartion" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="org.joda.time.DateTime" %>
 <%--
   Created by IntelliJ IDEA.
   User: argreway
@@ -28,16 +21,6 @@
             mapTypeId: 'roadmap',
             center: {lat: 39.739, lng: -104.990}
         });
-
-        var geocoder = new google.maps.Geocoder();
-        var infoWindow = new google.maps.InfoWindow(), marker, i;
-
-        <%--<% List<WO> woList = SchedulerBuilder.getWorkOrderList(new DateTime(),false); %>--%>
-        <%--<% String addressArray = WebUtilities.jsonArrayList(woList); %>--%>
-        <%--addresses = <%=addressArray%>;--%>
-        // console.log("ddata " + addresses);
-        // geoCodeAddresses(geocoder, addresses, map, infoWindow);
-
     }
 
     function geoCodeAddresses(geocoder,
@@ -45,41 +28,59 @@
                               resultsMap,
                               infoWindow)
     {
+        var bounds = new google.maps.LatLngBounds();
+
         for (var i = 0; i < addresses.length; i++)
         {
             var currAddress = addresses[i];
             console.log("current " + currAddress);
-
-            geocoder.geocode(
-                    {'address': currAddress},
-                    function (results,
-                              status) {
-
-                        if (status == 'OK')
-                        {
-                            resultsMap.setCenter(results[0].geometry.location);
-                            console.log("cords " + results[0].geometry.location);
-                            var marker = new google.maps.Marker(
-                                    {
-                                        map: resultsMap,
-                                        position: results[0].geometry.location
-                                        // title: '"' + currAddress + "'"
-                                    });
-                            // google.maps.event.addListener(marker, 'click', (function (marker,
-                            //                                                           i) {
-                            //     return function () {
-                            <%--infoWindow.setContent(`<%=CalenderUtils.getShortCustDesc(wo)%>`);--%>
-                            // infoWindow.open(map, marker);
-                            // }
-                            // })(marker, i));
-                        }
-                        else
-                        {
-                            throw('No results found: ' + status);
-                        }
-                    });
+            geocoder.geocode({'address': currAddress}, makeCallback(i, resultsMap, bounds, infoWindow));
         }
+
+        var boundsListener = google.maps.event.addListener((resultsMap), 'bounds_changed', function (event) {
+            this.setZoom(14);
+            google.maps.event.removeListener(boundsListener);
+        });
     }
+
+    function makeCallback(addressIndex,
+                          resultsMap,
+                          bounds,
+                          infoWindow)
+    {
+        var geocodeCallBack = function (results,
+                                        status) {
+
+            if (status == 'OK')
+            {
+                resultsMap.setCenter(results[0].geometry.location);
+                bounds.extend(results[0].geometry.location);
+                console.log("cords " + results[0].geometry.location);
+                var markerContent = "Stop [" + (addressIndex + 1) + "] -> " + " " + results[0].formatted_address;
+                var marker = new google.maps.Marker(
+                        {
+                            map: resultsMap,
+                            position: results[0].geometry.location,
+                            title: markerContent
+                        });
+
+                resultsMap.fitBounds(bounds);
+                google.maps.event.addListener(marker, 'click', (function (marker,
+                                                                          i) {
+                    return function () {
+                        infoWindow.setContent(markerContent);
+                        infoWindow.open(map, marker);
+                    }
+                })(marker, i));
+            }
+            else
+            {
+                throw('No results found: ' + status);
+            }
+        }
+        return geocodeCallBack;
+    }
+
 
     // Button Updates AJAX
     $("#select-tech").on('change', function () {
@@ -95,8 +96,7 @@
         dateVal = $('#select-date').val();
         $.post("${pageContext.request.contextPath}/maps", {tech: techVal, date: dateVal}).done(function (data) {
             var addrs = JSON.parse(data);
-            console.log("data " + data);
-            console.log("addrs " + addrs);
+            var infoWindow = new google.maps.InfoWindow(), marker, i;
             var map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 8,
                 mapTypeId: 'roadmap',
@@ -104,7 +104,7 @@
             });
 
             var geocoder = new google.maps.Geocoder();
-            geoCodeAddresses(geocoder, addrs, map, null)
+            geoCodeAddresses(geocoder, addrs, map, infoWindow)
         });
     });
 </script>
@@ -120,11 +120,7 @@
             <option>-Select Tech-</option>
             <% for (String tech : TechProfileConfiguration.getInstance().getDenTechToProfiles().keySet())
             { %>
-            <%="<option>"
-               +
-               tech
-               +
-               "</option>"%>
+            <%="<option>" + tech + "</option>"%>
             <%}%>
         </select>
         <select id="select-date">
@@ -138,20 +134,7 @@
 <div id="map"></div>
 
 <script async defer
-        <%
-            String
-                    apiKey
-                    =
-                    ExternalConfiguartion
-                            .
-                                    getInstance
-                                            (
-                                            )
-                            .
-                                    getGoogleMapApiKey
-                                            (
-                                            );
-        %>
+        <% String apiKey = ExternalConfiguartion.getInstance().getGoogleMapApiKey(); %>
         src="https://maps.googleapis.com/maps/api/js?key=<%=apiKey%>&callback=initialize">
 </script>
 

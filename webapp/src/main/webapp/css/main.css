@@ -61,8 +61,10 @@
 }
 
 #draggable {
-    width: 60px;
-    height: 60px;
+    width: 200px;
+    height: 100px;
+    alignment: center;
+    background-color: darkred;
 }
 
 #panel5 {
