@@ -9,12 +9,19 @@
 
  package com.sentryfire;
 
+ import java.util.List;
+ import java.util.stream.Collectors;
+
  import javax.swing.table.DefaultTableModel;
 
  import com.google.api.client.util.DateTime;
+ import com.google.gson.Gson;
+ import com.google.gson.GsonBuilder;
  import com.sentryfire.business.schedule.SchedulerBuilder;
  import com.sentryfire.business.schedule.googlecalendar.CalendarManager;
+ import com.sentryfire.business.utils.SerializerUtils;
  import com.sentryfire.config.TechProfileConfiguration;
+ import com.sentryfire.model.WO;
  import com.sentryfire.persistance.DAOFactory;
  import org.joda.time.MutableDateTime;
  import org.slf4j.Logger;
@@ -85,5 +92,27 @@
           }
        }
        return "Schedule Building Done";
+
+    }
+
+    public static List<WO> getAddressListWO()
+    {
+       List<WO> woList = SerializerUtils.deWOSerializeList();
+       return woList.stream().limit(3).collect(Collectors.toList());
+    }
+
+    public static List<String> getAddressList()
+    {
+       List<String> result = getAddressListWO().stream().limit(3).map(w -> w.getADR1() + " " + w.getCITY() + " " + w.getZIP()).collect(Collectors.toList());
+       return result.stream().map(s -> SchedulerBuilder.convert(s)).collect(Collectors.toList());
+    }
+
+    public static String jsonArrayList()
+    {
+       List<String> addressList = getAddressList();
+       GsonBuilder builder = new GsonBuilder();
+       Gson gson = builder.create();
+
+       return gson.toJson(addressList);
     }
  }

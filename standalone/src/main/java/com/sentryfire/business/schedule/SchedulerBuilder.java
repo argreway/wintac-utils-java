@@ -35,7 +35,6 @@
  import com.sentryfire.model.ItemStatHolder;
  import com.sentryfire.model.SKILL;
  import com.sentryfire.model.WO;
- import com.sentryfire.persistance.DAOFactory;
  import org.joda.time.DateTime;
  import org.joda.time.MutableDateTime;
  import org.slf4j.Logger;
@@ -47,13 +46,9 @@
 
     protected static CalendarManager calendarManager = CalendarManager.getInstance();
 
-    protected GoogleMapsClient googleMapsClient = new GoogleMapsClient();
-
     public void buildAndInsertAllSchedules(org.joda.time.DateTime start)
     {
-//       List<WO> woList = getWorkOrderList(start);
-       List<WO> woList = SerializerUtils.deWOSerializeList();
-
+       List<WO> woList = getWorkOrderList(start);
 
        List<WO> denver = woList.stream().filter(w -> w.getDEPT().equals("DENVER")).collect(Collectors.toList());
        WorkLoadCalculator.calculateWorkLoad(denver);
@@ -283,7 +278,7 @@
        origin = convert(origin);
        List<String> origList = Lists.newArrayList(origin);
 
-       DistanceMatrix matrix = googleMapsClient.getDistanceMatrix(origList, destList);
+       DistanceMatrix matrix = GoogleMapsClient.getDistanceMatrix(origList, destList);
 
        int closest = -1;
        if (matrix != null && matrix.rows.length > 0)
@@ -316,10 +311,12 @@
 
     protected List<WO> getWorkOrderList(DateTime start)
     {
+
        MutableDateTime end = new MutableDateTime(start);
        end.setDayOfMonth(start.dayOfMonth().getMaximumValue());
 
-       return DAOFactory.getWipDao().getHistoryWOAndItems(start.toDateTime(), end.toDateTime());
+//       return DAOFactory.getWipDao().getHistoryWOAndItems(start.toDateTime(), end.toDateTime());
+       return SerializerUtils.deWOSerializeList();
     }
 
     protected void submitCalendarToGoogle(ScheduleCalendar calendar)
@@ -387,7 +384,7 @@
        return false;
     }
 
-    protected String convert(String item)
+    public static String convert(String item)
     {
        if (item == null)
           return item;

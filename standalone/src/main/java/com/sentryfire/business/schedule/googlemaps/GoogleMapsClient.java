@@ -11,6 +11,7 @@
 
  import java.util.List;
 
+ import com.google.common.collect.Lists;
  import com.google.gson.Gson;
  import com.google.gson.GsonBuilder;
  import com.google.maps.DirectionsApi;
@@ -26,35 +27,20 @@
  import com.google.maps.model.Unit;
  import com.sentryfire.config.ExternalConfiguartion;
  import com.sentryfire.model.WO;
+ import com.sun.tools.javac.util.Pair;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
  public class GoogleMapsClient
  {
-    Logger log = LoggerFactory.getLogger(getClass());
+    static Logger log = LoggerFactory.getLogger(GoogleMapsClient.class);
 
     public void route(List<WO> woList)
     {
 
     }
 
-//    private void mapTechs(List<WO> list)
-//    {
-//       // Create buckets for techs
-//       Set<String> techs = list.stream().map(WO::getTECH).collect(Collectors.toSet());
-//       Map<String, List<WO>> techToWo = techs.stream().collect(Collectors.toMap(
-//          t -> t, t -> list.stream().filter(w1 -> w1.getTECH().equals(t)).collect(Collectors.toList())));
-//
-//       for (Map.Entry<String, List<WO>> entry : techToWo.entrySet())
-//       {
-//          System.out.println("key: " + entry.getKey());
-//          System.out.println("Values " + entry.getValue().stream().map(w -> convert(w.getADR1())).collect(Collectors.toList()));
-//       }
-//
-//       List<WO> rc = techToWo.get("RC");
-//    }
-
-    public void map()
+    public static void geocodingApi()
     {
        try
        {
@@ -76,10 +62,17 @@
 
     }
 
-    boolean print = false;
+    static boolean print = false;
 
-    public DistanceMatrix getDistanceMatrix(List<String> origins,
-                                            List<String> destinations)
+
+    public static List<Pair<String, String>> getLatLongForAddress()
+    {
+       List<Pair<String, String>> latLongList = Lists.newArrayList();
+       return latLongList;
+    }
+
+    public static DistanceMatrix getDistanceMatrix(List<String> origins,
+                                                   List<String> destinations)
     {
        try
        {

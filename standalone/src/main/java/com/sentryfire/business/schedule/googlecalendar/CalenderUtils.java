@@ -241,27 +241,7 @@
              List<String> itemDesc = wo.getMetaData().getItemStatHolderList().stream().map(
                 i -> i.getCount() + "-" + i.getItemCode()).collect(Collectors.toList());
 
-             // Greeting
-             desc = AppConfiguartion.getInstance().getEmailDescription();
-             // Items
-             desc += "SERVICE ITEMS:\t" + String.join(",", itemDesc);
-
-             if (wo.getSAL() != null && !wo.getSAL().isEmpty())
-                desc += "\n\nCONTACT NAME:\t\t" + wo.getSAL();
-             if (wo.getCST_TEL() != null && !wo.getCST_TEL().isEmpty())
-                desc += "\nCUSTOMER PHONE:\t" + wo.getCST_TEL();
-             if (wo.getWIP_TEL() != null && !wo.getWIP_TEL().isEmpty())
-                desc += "\nLOCATION PHONE:\t" + wo.getWIP_TEL();
-             if (wo.getWIP_CELL() != null && !wo.getWIP_CELL().isEmpty())
-                desc += "\nLOCATION CELL:\t\t" + wo.getWIP_CELL();
-             if (wo.getCN() != null && !wo.getCN().isEmpty())
-                desc += "\nCN:\t\t\t\t\t" + wo.getCN();
-             if (wo.getIN2() != null && !wo.getIN2().isEmpty())
-                desc += "\nJOB-IN2:\t\t\t" + wo.getIN2();
-             if (wo.getEMAIL() != null && !wo.getEMAIL().isEmpty())
-                desc += "\nEMAIL:\t\t\t\t" + wo.getEMAIL();
-
-             desc += "\n\n" + AUTO;
+             desc = getLongDescription(wo);
              location = wo.getADR1() + " " + wo.getCITY() + " " + wo.getZIP();
           }
           title = title.replace("_", " ");
@@ -279,6 +259,49 @@
           events.add(event);
        }
        return events;
+    }
+
+    public static String getLongDescription(WO wo)
+    {
+       String desc = "";
+       // Build Description
+       List<String> itemDesc = wo.getMetaData().getItemStatHolderList().stream().map(
+          i -> i.getCount() + "-" + i.getItemCode()).collect(Collectors.toList());
+
+       // Greeting
+       desc = AppConfiguartion.getInstance().getEmailDescription();
+       // Items
+       desc += getShortCustDesc(wo);
+
+       desc += "\n\n" + AUTO;
+       return desc;
+    }
+
+    public static String getShortCustDesc(WO wo)
+    {
+       String desc = "";
+       // Build Description
+       List<String> itemDesc = wo.getMetaData().getItemStatHolderList().stream().map(
+          i -> i.getCount() + "-" + i.getItemCode()).collect(Collectors.toList());
+       // Items
+       desc += "SERVICE ITEMS:\t" + String.join(",", itemDesc);
+
+       if (wo.getSAL() != null && !wo.getSAL().isEmpty())
+          desc += "\n\nCONTACT NAME:\t\t" + wo.getSAL();
+       if (wo.getCST_TEL() != null && !wo.getCST_TEL().isEmpty())
+          desc += "\nCUSTOMER PHONE:\t" + wo.getCST_TEL();
+       if (wo.getWIP_TEL() != null && !wo.getWIP_TEL().isEmpty())
+          desc += "\nLOCATION PHONE:\t" + wo.getWIP_TEL();
+       if (wo.getWIP_CELL() != null && !wo.getWIP_CELL().isEmpty())
+          desc += "\nLOCATION CELL:\t\t" + wo.getWIP_CELL();
+       if (wo.getCN() != null && !wo.getCN().isEmpty())
+          desc += "\nCN:\t\t\t\t\t" + wo.getCN();
+       if (wo.getIN2() != null && !wo.getIN2().isEmpty())
+          desc += "\nJOB-IN2:\t\t\t" + wo.getIN2();
+       if (wo.getEMAIL() != null && !wo.getEMAIL().isEmpty())
+          desc += "\nEMAIL:\t\t\t\t" + wo.getEMAIL();
+
+       return desc;
     }
 
  }
