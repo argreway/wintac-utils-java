@@ -11,6 +11,7 @@
  import java.util.Arrays;
  import java.util.List;
  import java.util.Map;
+ import java.util.function.Function;
  import java.util.regex.Matcher;
  import java.util.regex.Pattern;
  import java.util.stream.Collectors;
@@ -21,10 +22,14 @@
  import com.google.api.services.calendar.model.EventAttendee;
  import com.google.api.services.calendar.model.EventDateTime;
  import com.google.api.services.calendar.model.EventReminder;
+ import com.google.api.services.calendar.model.Events;
  import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.sentryfire.business.schedule.SchedulerBuilder;
  import com.sentryfire.business.schedule.model.EventTask;
  import com.sentryfire.business.schedule.model.MonthlyCalendar;
  import com.sentryfire.config.AppConfiguartion;
+ import com.sentryfire.config.TechProfileConfiguration;
  import com.sentryfire.model.WO;
  import org.joda.time.MutableDateTime;
  import org.slf4j.Logger;
@@ -187,6 +192,22 @@
        return result;
     }
 
+    public static org.joda.time.DateTime getDateFromEvent(Event e)
+    {
+       if (e.getStart() == null)
+          return null;
+
+       DateTime time = e.getStart().getDateTime();
+       if (time != null)
+          return new org.joda.time.DateTime(time.getValue());
+
+       time = e.getStart().getDate();
+       if (time != null)
+          return new org.joda.time.DateTime(time.getValue());
+
+       return null;
+    }
+
     public static String getIN2FromEvent(Event event)
     {
        String result = "";
@@ -302,6 +323,43 @@
           desc += "\nEMAIL:\t\t\t\t" + wo.getEMAIL();
 
        return desc;
+    }
+
+    public static Map<String, Map<String, List<WO>>> getCalMap()
+    {
+       List<WO> raw = SchedulerBuilder.getWorkOrderList(new org.joda.time.DateTime(), true);
+
+       Map<String, WO> in2ToWO = raw.stream().collect(Collectors.toMap(WO::getIN2, Function.identity()));
+
+       Map<String, Map<String, List<WO>>> result = Maps.newHashMap();
+
+       for (String tech : TechProfileConfiguration.getInstance().getDenTechToProfiles().keySet())
+       {
+          try
+          {
+             Events events = CalendarManager.getInstance().listEvents(tech);
+             Map<String, List<WO>> dateMap = Maps.newHashMap();
+             if (events != null && events.getItems() != null)
+             {
+                for (Event e : events.getItems())
+                {
+                   org.joda.time.DateTime time = CalenderUtils.getDateFromEvent(e);
+                   String in2 = CalenderUtils.getIN2FromEvent(e);
+                   if (in2 == null || time == null)
+                      continue;
+                   String day = time.getDayOfMonth() + "-" + time.getMonthOfYear() + "-" + time.getYear();
+                   WO wo = in2ToWO.get(in2);
+                   dateMap.computeIfAbsent(day, dList -> Lists.newArrayList()).add(wo);
+                }
+                result.put(tech, dateMap);
+             }
+          }
+          catch (Exception e)
+          {
+             log.error("Failed to delete techs calendar events due to: ", e);
+          }
+       }
+       return result;
     }
 
  }

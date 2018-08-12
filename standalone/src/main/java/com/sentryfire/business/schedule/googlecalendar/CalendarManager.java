@@ -133,10 +133,20 @@
     /**
      * not sure why some events end up becoming recurring events?
      */
-    public Events listEvents(String calName) throws Exception
+    public Events listEvents(String calName)
     {
 //       return service.events().list(getCalID(calName)).execute();
-       return service.events().list(getCalID(calName)).setSingleEvents(true).execute();
+       if (getCalID(calName) == null)
+          return null;
+       try
+       {
+          return service.events().list(getCalID(calName)).setSingleEvents(true).execute();
+       }
+       catch (Exception e)
+       {
+          log.error("Failed to get calendar: " + e);
+       }
+       return null;
     }
 
     public void deleteAllCalendarEvents(String calName) throws Exception

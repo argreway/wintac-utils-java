@@ -48,7 +48,7 @@
 
     public void buildAndInsertAllSchedules(org.joda.time.DateTime start)
     {
-       List<WO> woList = getWorkOrderList(start);
+       List<WO> woList = getWorkOrderList(start, true);
 
        List<WO> denver = woList.stream().filter(w -> w.getDEPT().equals("DENVER")).collect(Collectors.toList());
        WorkLoadCalculator.calculateWorkLoad(denver);
@@ -309,14 +309,18 @@
        return closetTech;
     }
 
-    protected List<WO> getWorkOrderList(DateTime start)
+    public static List<WO> getWorkOrderList(DateTime start,
+                                            boolean full)
     {
-
        MutableDateTime end = new MutableDateTime(start);
        end.setDayOfMonth(start.dayOfMonth().getMaximumValue());
 
+       if (full)
+       {
 //       return DAOFactory.getWipDao().getHistoryWOAndItems(start.toDateTime(), end.toDateTime());
-       return SerializerUtils.deWOSerializeList();
+          return SerializerUtils.deWOSerializeList();
+       }
+       return SerializerUtils.deWOSerializeList().stream().limit(2).collect(Collectors.toList());
     }
 
     protected void submitCalendarToGoogle(ScheduleCalendar calendar)

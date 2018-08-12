@@ -10,6 +10,7 @@
  package com.sentryfire;
 
  import java.util.List;
+ import java.util.Objects;
  import java.util.stream.Collectors;
 
  import javax.swing.table.DefaultTableModel;
@@ -19,7 +20,6 @@
  import com.google.gson.GsonBuilder;
  import com.sentryfire.business.schedule.SchedulerBuilder;
  import com.sentryfire.business.schedule.googlecalendar.CalendarManager;
- import com.sentryfire.business.utils.SerializerUtils;
  import com.sentryfire.config.TechProfileConfiguration;
  import com.sentryfire.model.WO;
  import com.sentryfire.persistance.DAOFactory;
@@ -29,7 +29,7 @@
 
  public class WebUtilities
  {
-    private Logger log = LoggerFactory.getLogger(getClass());
+    private static Logger log = LoggerFactory.getLogger(WebUtilities.class);
 
     SchedulerBuilder schedulerBuilder;
 
@@ -95,25 +95,22 @@
 
     }
 
-    public static List<WO> getAddressListWO()
+    public static String getAddress(WO wo)
     {
-       List<WO> woList = SerializerUtils.deWOSerializeList();
-//       return woList;
-       return woList.stream().limit(20).collect(Collectors.toList());
+       if (wo == null)
+          return null;
+       String result = wo.getADR1() + " " + wo.getCITY() + " " + wo.getZIP();
+       return SchedulerBuilder.convert(result);
     }
 
-    public static List<String> getAddressList()
+    public static String jsonArrayList(List<WO> wos)
     {
-       List<String> result = getAddressListWO().stream().limit(3).map(w -> w.getADR1() + " " + w.getCITY() + " " + w.getZIP()).collect(Collectors.toList());
-       return result.stream().map(s -> SchedulerBuilder.convert(s)).collect(Collectors.toList());
-    }
 
-    public static String jsonArrayList()
-    {
-       List<String> addressList = getAddressList();
+       List<String> addressList = wos.stream().map(WebUtilities::getAddress).filter(Objects::nonNull).collect(Collectors.toList());
        GsonBuilder builder = new GsonBuilder();
        Gson gson = builder.create();
 
        return gson.toJson(addressList);
     }
+
  }

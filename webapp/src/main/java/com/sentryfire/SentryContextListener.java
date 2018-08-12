@@ -13,6 +13,7 @@
  import javax.servlet.ServletContextListener;
 
  import com.sentryfire.console.WebConsoleLogger;
+ import com.sentryfire.controller.MapsController;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -25,6 +26,7 @@
     {
        log.info("Servlet Starting!");
        AppAppender.registerAppLog(new WebConsoleLogger());
+       MapsController mapsController = new MapsController();
        log.info("Servlet Started!");
     }
 

@@ -94,7 +94,8 @@
 
     public String getADR1()
     {
-       return ADR1;
+
+       return ADR1 == null ? "" : ADR1;
     }
 
     public void setADR1(String ADR1)
@@ -304,7 +305,7 @@
 
     public String getCITY()
     {
-       return CITY;
+       return CITY == null ? "" : CITY;
     }
 
     public void setCITY(String CITY)
@@ -324,7 +325,7 @@
 
     public String getZIP()
     {
-       return ZIP;
+       return ZIP == null ? "" : ZIP;
     }
 
     public void setZIP(String ZIP)
