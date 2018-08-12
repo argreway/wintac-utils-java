@@ -59,3 +59,13 @@
 #refreshBtn {
     padding: 10px 10px 10px 10px;
 }
+
+#draggable {
+    width: 25px;
+    height: 25px;
+}
+
+#panel5 {
+    width: 100%;
+    height: 500px;
+}

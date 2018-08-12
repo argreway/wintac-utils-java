@@ -98,7 +98,8 @@
     public static List<WO> getAddressListWO()
     {
        List<WO> woList = SerializerUtils.deWOSerializeList();
-       return woList.stream().limit(3).collect(Collectors.toList());
+//       return woList;
+       return woList.stream().limit(20).collect(Collectors.toList());
     }
 
     public static List<String> getAddressList()

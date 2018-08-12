@@ -63,6 +63,10 @@
 
     <button class="accordion">Notes/Help</button>
     <div id="panel5" class="panel">
+        <div id="draggable" class="ui-widget-content">
+            <p>Send Email to Tony G!</p>
+        </div>
+
     </div>
 </div>
 

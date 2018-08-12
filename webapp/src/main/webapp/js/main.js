@@ -30,7 +30,12 @@ $("#panel-maps-content").load("maps.jsp");
 
 // $('#acc1').trigger("click");
 
-function refreshIframe() {
+function refreshIframe()
+{
     var ifr = document.getElementsByName('g-calendar')[0];
     ifr.src = ifr.src;
 }
+
+$(function () {
+    $("#draggable").draggable();
+});
