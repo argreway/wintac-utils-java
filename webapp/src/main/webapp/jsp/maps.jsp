@@ -11,6 +11,7 @@
 <script>
     //@ sourceURL=maps.jsp
 
+
     function initialize()
     {
         // var bounds = new google.maps.LatLngBounds();
@@ -23,23 +24,112 @@
         });
     }
 
-    function geoCodeAddresses(geocoder,
-                              addresses,
-                              resultsMap,
-                              infoWindow)
+    function geoCodeAndRoute(addresses)
     {
+        var geocoder = new google.maps.Geocoder();
+        var markerArray = [];
+        for (var i = 0; i < addresses.length; i++)
+        {
+            var currAddress = addresses[i];
+            geocoder.geocode({'address': currAddress}, routeCallBack(addresses, markerArray));
+        }
+    }
+
+    function routeCallBack(addresses,
+                           markerArray)
+    {
+        var geoCallBack = function (results,
+                                    status) {
+            markerArray.push(results[0]);
+            if (markerArray.length == addresses.length)
+            {
+                routeWaypoints(markerArray);
+            }
+
+        };
+        return geoCallBack;
+    }
+
+    function geoCodeAddresses(addresses)
+    {
+        var infoWindow = new google.maps.InfoWindow();
+        var geocoder = new google.maps.Geocoder();
         var bounds = new google.maps.LatLngBounds();
+        var map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 10,
+            center: {lat: 39.739, lng: -104.990},
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
 
         for (var i = 0; i < addresses.length; i++)
         {
             var currAddress = addresses[i];
-            console.log("current " + currAddress);
-            geocoder.geocode({'address': currAddress}, makeCallback(i, resultsMap, bounds, infoWindow));
+            geocoder.geocode({'address': currAddress}, makeCallback(i, map, bounds, infoWindow));
         }
 
-        var boundsListener = google.maps.event.addListener((resultsMap), 'bounds_changed', function (event) {
+        var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function (event) {
             this.setZoom(14);
             google.maps.event.removeListener(boundsListener);
+        });
+    }
+
+    function routeWaypoints(locations)
+    {
+        var directionsDisplay = new google.maps.DirectionsRenderer();
+        var directionsService = new google.maps.DirectionsService();
+
+        var map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 10,
+            center: {lat: 39.739, lng: -104.990},
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+        directionsDisplay.setMap(map);
+        directionsDisplay.setPanel(document.getElementById('right-panel'));
+
+        var infowindow = new google.maps.InfoWindow();
+
+        var marker, i;
+        var request = {
+            travelMode: google.maps.TravelMode.DRIVING
+        };
+
+        for (i = 0; i < locations.length; i++)
+        {
+            var markerContent = "Stop [" + (i + 1) + "] -> " + " " + locations[i].formatted_address;
+            console.log(markerContent);
+            marker = new google.maps.Marker(
+                    {
+                        position: locations[i].geometry.location,
+                        title: markerContent
+                    });
+
+            google.maps.event.addListener(marker, 'click', (function (marker,
+                                                                      i) {
+                return function () {
+                    infowindow.setContent(markerContent);
+                    infowindow.open(map, marker);
+                }
+            })(marker, i));
+
+            if (i == 0) request.origin = marker.getPosition();
+            else if (i == locations.length - 1) request.destination = marker.getPosition();
+            else
+            {
+                if (!request.waypoints) request.waypoints = [];
+                request.waypoints.push(
+                        {
+                            location: marker.getPosition(),
+                            stopover: true
+                        });
+            }
+
+        }
+        directionsService.route(request, function (result,
+                                                   status) {
+            if (status == google.maps.DirectionsStatus.OK)
+            {
+                directionsDisplay.setDirections(result);
+            }
         });
     }
 
@@ -55,7 +145,7 @@
             {
                 resultsMap.setCenter(results[0].geometry.location);
                 bounds.extend(results[0].geometry.location);
-                console.log("cords " + results[0].geometry.location);
+                // console.log("cords " + results[0].geometry.location);
                 var markerContent = "Stop [" + (addressIndex + 1) + "] -> " + " " + results[0].formatted_address;
                 var marker = new google.maps.Marker(
                         {
@@ -90,21 +180,36 @@
             $('#select-date').html(data);
         });
     });
+    // $("#loadTechRoute").on('click', function () {
+    //
+    //     techVal = $('#select-tech').val();
+    //     dateVal = $('#select-date').val();
+    <%--$.post("${pageContext.request.contextPath}/maps", {tech: techVal, date: dateVal}).done(function (data) {--%>
+    //     var addrs = JSON.parse(data);
+    //     var infoWindow = new google.maps.InfoWindow(), marker, i;
+    //     var map = new google.maps.Map(document.getElementById('map'), {
+    //         zoom: 8,
+    //         mapTypeId: 'roadmap',
+    //         center: {lat: 39.739, lng: -104.990}
+    //     });
+    //
+    //     geoCodeAddresses(geocoder, addrs, map, infoWindow)
+    // });
+    // });
+
     $("#loadTechRoute").on('click', function () {
 
         techVal = $('#select-tech').val();
         dateVal = $('#select-date').val();
         $.post("${pageContext.request.contextPath}/maps", {tech: techVal, date: dateVal}).done(function (data) {
-            var addrs = JSON.parse(data);
-            var infoWindow = new google.maps.InfoWindow(), marker, i;
-            var map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 8,
-                mapTypeId: 'roadmap',
-                center: {lat: 39.739, lng: -104.990}
-            });
 
-            var geocoder = new google.maps.Geocoder();
-            geoCodeAddresses(geocoder, addrs, map, infoWindow)
+            $('#map').empty();
+            $('#right-panel').empty();
+            var addrs = JSON.parse(data);
+            if (addrs.length < 2)
+                geoCodeAddresses(addrs);
+            else
+                geoCodeAndRoute(addrs);
         });
     });
 </script>
@@ -132,6 +237,7 @@
 
 <!--The div element for the map -->
 <div id="map"></div>
+<div id="right-panel"></div>
 
 <script async defer
         <% String apiKey = ExternalConfiguartion.getInstance().getGoogleMapApiKey(); %>

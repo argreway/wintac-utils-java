@@ -9,6 +9,7 @@
  package com.sentryfire.business.schedule.googlecalendar;
 
  import java.util.Arrays;
+ import java.util.Comparator;
  import java.util.List;
  import java.util.Map;
  import java.util.function.Function;
@@ -30,6 +31,7 @@
  import com.sentryfire.business.schedule.model.MonthlyCalendar;
  import com.sentryfire.config.AppConfiguartion;
  import com.sentryfire.config.TechProfileConfiguration;
+ import com.sentryfire.model.ItemStatHolder;
  import com.sentryfire.model.WO;
  import org.joda.time.MutableDateTime;
  import org.slf4j.Logger;
@@ -349,7 +351,9 @@
                       continue;
                    String day = time.getDayOfMonth() + "-" + time.getMonthOfYear() + "-" + time.getYear();
                    WO wo = in2ToWO.get(in2);
-                   dateMap.computeIfAbsent(day, dList -> Lists.newArrayList()).add(wo);
+                   if (wo != null && wo.getMetaData().getItemStatHolderList() != null && !wo.getMetaData().getItemStatHolderList().isEmpty())
+                      wo.getMetaData().getItemStatHolderList().get(0).setScheduledStart(time);
+                   dateMap.computeIfAbsent(day, dList -> Lists.newLinkedList()).add(wo);
                 }
                 result.put(tech, dateMap);
              }
@@ -359,7 +363,51 @@
              log.error("Failed to delete techs calendar events due to: ", e);
           }
        }
+
+       // Sort the work orders by start time
+       for (Map<String, List<WO>> woMap : result.values())
+       {
+          for (List<WO> list : woMap.values())
+          {
+             list.sort(new WODateComparator());
+          }
+       }
+
        return result;
+    }
+
+    protected static class WODateComparator implements Comparator<WO>
+    {
+       @Override
+       public int compare(WO o1,
+                          WO o2)
+       {
+          if (o1 == null || o2 == null)
+             return 0;
+
+          if (o1.getMetaData() == null || o2.getMetaData() == null)
+             return 0;
+
+          if (o1.getMetaData().getItemStatHolderList() == null || o1.getMetaData().getItemStatHolderList().isEmpty() ||
+              o2.getMetaData().getItemStatHolderList() == null || o2.getMetaData().getItemStatHolderList().isEmpty())
+             return 0;
+
+          ItemStatHolder h1 = o1.getMetaData().getItemStatHolderList().get(0);
+          ItemStatHolder h2 = o2.getMetaData().getItemStatHolderList().get(0);
+
+          org.joda.time.DateTime d1 = h1.getScheduledStart();
+          org.joda.time.DateTime d2 = h2.getScheduledStart();
+
+          if (d1 == null || d2 == null)
+             return 0;
+
+          if (d1.isBefore(d2))
+             return -1;
+          else if (d1.isAfter(d2))
+             return 1;
+
+          return 0;
+       }
     }
 
  }
