@@ -383,6 +383,19 @@
        this.EMAIL = EMAIL;
     }
 
+    public String getFullAddress()
+    {
+       String result = getADR1() + " " + getCITY() + " " + getZIP();
+       return convert(result);
+    }
+
+    public static String convert(String item)
+    {
+       if (item == null)
+          return item;
+       return item.replace("_", " ");
+    }
+
     @Override
     public boolean equals(Object o)
     {

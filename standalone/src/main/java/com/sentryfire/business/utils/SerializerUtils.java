@@ -16,7 +16,9 @@
  import java.io.ObjectInputStream;
  import java.io.ObjectOutputStream;
  import java.util.List;
+ import java.util.Map;
 
+ import com.sentryfire.business.schedule.model.DistanceData;
  import com.sentryfire.model.WO;
 
  public class SerializerUtils
@@ -53,6 +55,51 @@
           FileInputStream fileIn = new FileInputStream("/tmp/test-data.txt");
           ObjectInputStream in = new ObjectInputStream(fileIn);
           result = (List<WO>) in.readObject();
+          in.close();
+          fileIn.close();
+       }
+       catch (IOException e2)
+       {
+          e2.printStackTrace();
+       }
+       catch (Exception ex)
+       {
+          ex.printStackTrace();
+       }
+       return result;
+    }
+
+    public static void serializeDistanceData(Object obj)
+    {
+       // Let's serialize an Object
+       try
+       {
+          FileOutputStream fileOut = new FileOutputStream("/tmp/distance-data.txt");
+          ObjectOutputStream out = new ObjectOutputStream(fileOut);
+          out.writeObject(obj);
+          out.close();
+          fileOut.close();
+       }
+       catch (FileNotFoundException e)
+       {
+          e.printStackTrace();
+       }
+       catch (IOException e)
+       {
+          e.printStackTrace();
+       }
+    }
+
+
+    public static Map<String, Map<String, DistanceData>> deSerializeDistanceData()
+    {
+       // Let's deserialize an Object
+       Map<String, Map<String, DistanceData>> result = null;
+       try
+       {
+          FileInputStream fileIn = new FileInputStream("/tmp/distance-data.txt");
+          ObjectInputStream in = new ObjectInputStream(fileIn);
+          result = (Map<String, Map<String, DistanceData>>) in.readObject();
           in.close();
           fileIn.close();
        }

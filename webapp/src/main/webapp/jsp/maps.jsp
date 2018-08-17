@@ -31,16 +31,17 @@
         for (var i = 0; i < addresses.length; i++)
         {
             var currAddress = addresses[i];
-            geocoder.geocode({'address': currAddress}, routeCallBack(addresses, markerArray));
+            geocoder.geocode({'address': currAddress}, routeCallBack(addresses, i, markerArray));
         }
     }
 
     function routeCallBack(addresses,
+                           i,
                            markerArray)
     {
         var geoCallBack = function (results,
                                     status) {
-            markerArray.push(results[0]);
+            markerArray[i] = results[0];
             if (markerArray.length == addresses.length)
             {
                 routeWaypoints(markerArray);
@@ -106,15 +107,26 @@
             google.maps.event.addListener(marker, 'click', (function (marker,
                                                                       i) {
                 return function () {
+                    var markerContent = "Stop [" + (i + 1) + "] -> " + " " + locations[i].formatted_address;
                     infowindow.setContent(markerContent);
                     infowindow.open(map, marker);
                 }
             })(marker, i));
 
-            if (i == 0) request.origin = marker.getPosition();
-            else if (i == locations.length - 1) request.destination = marker.getPosition();
+            if (i == 0)
+            {
+
+                console.log("Origin " + locations[i].formatted_address)
+                request.origin = marker.getPosition();
+            }
+            else if (i == locations.length - 1)
+            {
+                console.log("Dest " + locations[i].formatted_address)
+                request.destination = marker.getPosition();
+            }
             else
             {
+                console.log("Waypoint " + locations[i].formatted_address)
                 if (!request.waypoints) request.waypoints = [];
                 request.waypoints.push(
                         {

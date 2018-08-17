@@ -66,11 +66,31 @@
      */
     public EventTask scheduleWorkOrder(WO wo)
     {
-
        return scheduleWorkOrder(wo, null);
     }
 
+    public boolean scheduleFreeDay(List<WO> woList)
+    {
+       Day day = null;
+       for (WO wo : woList)
+       {
+          EventTask eventTask = scheduleWorkOrder(wo, day, null);
+          if (eventTask == null)
+             return false;
+          day = masterCalendar.get(eventTask.getStart().getDayOfMonth());
+       }
+
+       return true;
+    }
+
     public EventTask scheduleWorkOrder(WO wo,
+                                       DateTime scheduledStart)
+    {
+       return scheduleWorkOrder(wo, null, scheduledStart);
+    }
+
+    public EventTask scheduleWorkOrder(WO wo,
+                                       Day day,
                                        DateTime scheduledStart)
     {
        Integer timeForTechsItems = wo.getMetaData().getItemStatHolderList().stream().
@@ -97,7 +117,7 @@
        }
 
        // Otherwise find next best free slot
-       return scheduleDailyTask(wo, timeForTechsItems);
+       return scheduleDailyTask(wo, day, timeForTechsItems);
     }
 
     public void insertEventList(List<Event> events,
@@ -126,17 +146,21 @@
     //////////////////////////////////////////
 
     private EventTask scheduleDailyTask(WO wo,
+                                        Day day,
                                         Integer timeForTechsItems)
     {
        EventTask scheduledTask;
-       // Find days with free slots where we are already close to that location or
-       // schedule location to a new free day if available
-       Set<Day> locationDays = daysAtLocation.get(wo.getCITY());
-       if (locationDays == null)
-          locationDays = Sets.newHashSet();
+//       // Find days with free slots where we are already close to that location or
+//       // schedule location to a new free day if available
+//       Set<Day> locationDays = daysAtLocation.get(wo.getCITY());
+//       if (locationDays == null)
+//          locationDays = Sets.newHashSet();
+//       List<Day> locationDaysToTry = Lists.newArrayList(locationDays);
 
-       List<Day> locationDaysToTry = Lists.newArrayList(locationDays);
-       if (!freeDays.isEmpty())
+       List<Day> locationDaysToTry = Lists.newArrayList();
+       if (day != null)
+          locationDaysToTry.add(day);
+       else if (!freeDays.isEmpty())
        {
           Random rand = new Random();
           // Randomize free days so heavy work load is not always at the beginning

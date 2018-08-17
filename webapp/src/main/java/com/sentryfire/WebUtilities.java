@@ -95,18 +95,10 @@
 
     }
 
-    public static String getAddress(WO wo)
-    {
-       if (wo == null)
-          return null;
-       String result = wo.getADR1() + " " + wo.getCITY() + " " + wo.getZIP();
-       return SchedulerBuilder.convert(result);
-    }
-
     public static String jsonArrayList(List<WO> wos)
     {
 
-       List<String> addressList = wos.stream().map(WebUtilities::getAddress).filter(Objects::nonNull).collect(Collectors.toList());
+       List<String> addressList = wos.stream().map(WO::getFullAddress).filter(Objects::nonNull).collect(Collectors.toList());
        GsonBuilder builder = new GsonBuilder();
        Gson gson = builder.create();
 

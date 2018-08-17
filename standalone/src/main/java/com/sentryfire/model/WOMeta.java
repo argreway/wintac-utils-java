@@ -27,6 +27,11 @@
        return itemStatHolderList;
     }
 
+    public List<ItemStatHolder> getItemStatHolderList(String tech)
+    {
+       return itemStatHolderList.stream().filter(i -> tech.equals(i.getTech())).collect(Collectors.toList());
+    }
+
     public void setItemStatHolderList(List<ItemStatHolder> itemStatHolderList)
     {
        this.itemStatHolderList = itemStatHolderList;
@@ -41,6 +46,12 @@
     {
        return itemStatHolderList.stream().mapToInt(ItemStatHolder::getMin).sum();
     }
+
+    public Integer getWorkLoadMinutes(String tech)
+    {
+       return itemStatHolderList.stream().filter(i -> tech.equals(i.getTech())).mapToInt(ItemStatHolder::getMin).sum();
+    }
+
 
     public Set<String> getTechsOnSite()
     {

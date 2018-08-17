@@ -13,6 +13,8 @@
  import java.util.Comparator;
  import java.util.List;
  import java.util.Map;
+ import java.util.Objects;
+ import java.util.stream.Collectors;
 
  import javax.servlet.ServletException;
  import javax.servlet.annotation.WebServlet;
@@ -81,9 +83,16 @@
        }
        else if (techID != null && dateVal != null)
        {
-          List<WO> woList = calMap.get(techID).get(dateVal);
+          List<WO> woList = calMap.get(techID).get(dateVal).stream().filter(Objects::nonNull).sorted(
+             Comparator.comparingLong(MapsController::getStartMillis))
+             .collect(Collectors.toList());
           response.getWriter().println(WebUtilities.jsonArrayList(woList));
        }
+    }
+
+    protected static Long getStartMillis(WO wo)
+    {
+       return wo.getMetaData().getItemStatHolderList().get(0).getScheduledStart().getMillis();
     }
 
     class DateComparator implements Comparator<String>
