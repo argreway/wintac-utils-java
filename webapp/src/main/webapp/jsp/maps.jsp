@@ -1,5 +1,11 @@
 <%@ page import="com.sentryfire.config.TechProfileConfiguration" %>
 <%@ page import="com.sentryfire.config.ExternalConfiguartion" %>
+<%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.List" %>
+<%@ page import="com.google.common.collect.Lists" %>
+<%@ page import="java.util.stream.Collectors" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="com.sentryfire.WebUtilities" %>
 <%--
   Created by IntelliJ IDEA.
   User: argreway
@@ -235,8 +241,9 @@
     <div class="controlgroup">
         <select id="select-tech">
             <option>-Select Tech-</option>
-            <% for (String tech : TechProfileConfiguration.getInstance().getDenTechToProfiles().keySet())
-            { %>
+            <%
+                for (String tech : WebUtilities.getTechs())
+                { %>
             <%="<option>" + tech + "</option>"%>
             <%}%>
         </select>

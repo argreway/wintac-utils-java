@@ -21,8 +21,6 @@
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
  import com.google.common.collect.Sets;
- import com.google.maps.model.DistanceMatrix;
- import com.google.maps.model.DistanceMatrixElement;
  import com.sentryfire.business.schedule.googlecalendar.CalendarManager;
  import com.sentryfire.business.schedule.googlecalendar.CalenderUtils;
  import com.sentryfire.business.schedule.googlemaps.GoogleMapsClient;
@@ -37,6 +35,7 @@
  import com.sentryfire.model.ItemStatHolder;
  import com.sentryfire.model.SKILL;
  import com.sentryfire.model.WO;
+ import com.sentryfire.persistance.DAOFactory;
  import org.joda.time.DateTime;
  import org.joda.time.MutableDateTime;
  import org.slf4j.Logger;
@@ -89,7 +88,7 @@
        // Filter out raw list
        List<WO> woList = filterRawWOList(rawList, confirmed.values().stream().flatMap(List::stream).collect(Collectors.toList()));
 
-       ScheduleCalendar calendar = buildSchedule(TechProfileConfiguration.getInstance().getDenTechToProfiles(), woList, start, in2ToWOList, confirmed);
+       ScheduleCalendar calendar = buildSchedule(profileMap, woList, start, in2ToWOList, confirmed);
        submitCalendarToGoogle(calendar);
     }
 
@@ -146,16 +145,20 @@
                                             final List<WO> woList,
                                             final Map<String, WO> in2ToWOMap) throws Exception
     {
+       log.info("Scheduling Tech: " + calendar.getTech());
        log.info("Cities to visit: " + woList.stream().map(WO::getCITY).collect(Collectors.toSet()));
+       if (woList.isEmpty())
+          return woList;
 
        // Keep track of what we scheduled
        List<WO> completedWOList = Lists.newArrayList();
        List<WO> unScheduled = Lists.newArrayList(woList);
 
        // Compute Distances Between WOs
-//       Map<String, Map<String, DistanceData>> matrix = SerializerUtils.deSerializeDistanceData();
-       Map<String, Map<String, DistanceData>> matrix = GoogleMapsClient.getFullMeshMatrix(woList);
-       SerializerUtils.serializeDistanceData(matrix);
+       Map<String, Map<String, DistanceData>> matrix = SerializerUtils.deSerializeDistanceDataName(calendar.getTech());
+       if (matrix == null)
+          matrix = GoogleMapsClient.getFullMeshMatrix(woList);
+       SerializerUtils.serializeDistanceDataName(matrix, calendar.getTech());
 
        // Sort WO Longest to Shortest
        List<WO> techMasterList = woList.stream().sorted(
@@ -188,7 +191,13 @@
 
        for (WO wo : scheduledList)
        {
-          unScheduled.removeAll(scheduleDayFromOrigin(wo, calendar, in2ToWOMap, matrix));
+          List<WO> done = scheduleDayFromOrigin(wo, calendar, in2ToWOMap, matrix);
+          if (done == null)
+          {
+             break;
+          }
+          unScheduled.removeAll(done);
+          completedWOList.addAll(done);
        }
 
        // Going reverse order distance from the shop
@@ -201,7 +210,12 @@
        while (unScheduled.size() > 0)
        {
           scheduledList = scheduleDayFromOrigin(unScheduled.get(0), calendar, in2ToWOMap, matrix);
+          if (scheduledList == null)
+          {
+             break;
+          }
           unScheduled.removeAll(scheduledList);
+          completedWOList.addAll(scheduledList);
        }
 
        log.info(calendar.printCalendar(false));
@@ -228,7 +242,10 @@
        }
 
        if (!calendar.scheduleFreeDay(dayToSchedule))
-          throw new Exception("Failed to calculate route!");
+       {
+          log.error("Failed to calculate route!" + dayToSchedule);
+          return null;
+       }
 
        return dayToSchedule;
     }
@@ -253,6 +270,13 @@
           WO destWO = in2ToWOMap.get(entry.getKey());
           if (destWO.getMetaData().getWorkLoadMinutes(calendar.getTech()) > currentMinsLeft)
              continue;
+
+          if (destWO.getMetaData().getItemStatHolderList(calendar.getTech()) == null
+              || destWO.getMetaData().getItemStatHolderList(calendar.getTech()).isEmpty())
+          {
+             log.error("This shouldn't be seen in prod only when we are caching google data.");
+             continue;
+          }
 
           // Already scheduled
           if (destWO.getMetaData().getItemStatHolderList(calendar.getTech()).get(0).getScheduledStart() != null)
@@ -322,27 +346,38 @@
           return;
        }
 
+       // Assign work orders based on territory if required
+       Map<String, Map<String, DistanceData>> matrix = null;
+       List<WO> assignedWorkList = wos.stream().filter(w -> shouldAssignWO(w, skill)).collect(Collectors.toList());
+       if (!assignedWorkList.isEmpty())
+       {
+          Map<String, String> origLocations = Maps.newTreeMap();
+          assignedWorkList.forEach(w -> origLocations.put(w.getIN2(), w.getFullAddress()));
 
-//       Map<String, Map<String, DistanceData>> matrix = null;
-//       // Build matrix if necessary
-//       if (skill == SKILL.KH)
-//       {
-//          List<String> origLocations = wos.stream().map(WO::getFullAddress).collect(Collectors.toList());
-//          List<String> destTerritories = availableTechs.stream().map(TechProfile::getTerritory).collect(Collectors.toList());
-//          matrix = GoogleMapsClient.getFullMeshMatrix(origLocations, destTerritories);
-//
-//       }
+          Map<String, String> destTerritories = Maps.newTreeMap();
+          for (TechProfile p : availableTechs)
+          {
+             if (p.getTerritory() != null && !p.getTerritory().isEmpty())
+                destTerritories.put(p.getName(), p.getTerritory());
+          }
 
+          matrix = SerializerUtils.deSerializeDistanceDataName(skill.name());
+          if (matrix == null)
+             matrix = GoogleMapsClient.getFullMeshMatrix(origLocations, destTerritories);
+          SerializerUtils.serializeDistanceDataName(matrix, skill.name());
+       }
 
        int techIdx = 0;
        for (WO wo : wos)
        {
           List<ItemStatHolder> itemsForSkill = wo.getMetaData().getItemStatHolderList().stream().filter(i -> skill.equals(i.getSkill())).collect(Collectors.toList());
 
-          //  Group WO by territory
-          if (skill == SKILL.KH)
+          //  Assign WO by territory
+          if (matrix != null && matrix.get(wo.getIN2()) != null)
           {
-             String tech = getClosestTech(wo, availableTechs);
+             Map.Entry<String, DistanceData> techEntry = matrix.get(wo.getIN2()).entrySet().iterator().next();
+             String tech = techEntry.getKey();
+             log.info("Assigning " + tech + " to " + wo.getIN2());
              itemsForSkill.forEach(i -> i.setTech(tech));
              result.get(tech).add(wo);
           }
@@ -379,46 +414,21 @@
     // Helpers
     /////////////////////////////////////
 
-    protected String getClosestTech(WO wo,
-                                    List<TechProfile> availableTechs)
+    protected static boolean shouldAssignWO(WO wo,
+                                            SKILL skill)
     {
-       List<String> destList = availableTechs.stream().filter(p -> p.getTerritory() != null && !p.getTerritory().isEmpty()).
-          map(TechProfile::getTerritory).collect(Collectors.toList());
-       List<String> techList = availableTechs.stream().filter(p -> p.getTerritory() != null && !p.getTerritory().isEmpty()).
-          map(TechProfile::getName).collect(Collectors.toList());
+       if (skill == SKILL.KH)
+          return true;
 
-       String origin = wo.getFullAddress();
-       List<String> origList = Lists.newArrayList(origin);
-
-       DistanceMatrix matrix = GoogleMapsClient.getDistanceMatrix(origList, destList);
-
-       int closest = -1;
-       if (matrix != null && matrix.rows.length > 0)
+       if (skill == SKILL.FE)
        {
-          long closestDist = Long.MAX_VALUE;
-          int idx = 0;
-          for (DistanceMatrixElement element : matrix.rows[0].elements)
-          {
-             if (element.distance == null)
-             {
-                log.error("Distance is null? " + origList);
-                continue;
-             }
-             if (element.distance.inMeters < closestDist)
-             {
-                closest = idx;
-                closestDist = element.distance.inMeters;
-             }
-             idx++;
-          }
+          long numTags = wo.getMetaData().getItemStatHolderList().stream().
+             filter(i -> "TAG".equals(i.getItemCode())).mapToInt(ItemStatHolder::getCount).sum();
+          if (numTags >= 15)
+             return true;
        }
+       return false;
 
-       if (closest == -1)
-          return null;
-
-       String closetTech = techList.get(closest);
-       log.info("Assigning " + origin + " to " + closetTech);
-       return closetTech;
     }
 
     public static List<WO> getWorkOrderList(DateTime start,
@@ -429,8 +439,10 @@
 
        if (full)
        {
-//          return DAOFactory.getWipDao().getHistoryWOAndItems(start.toDateTime(), end.toDateTime());
-          return SerializerUtils.deWOSerializeList();
+          List<WO> result = SerializerUtils.deWOSerializeList();
+          if (result == null)
+             result = DAOFactory.getWipDao().getHistoryWOAndItems(start.toDateTime(), end.toDateTime());
+          return result;
        }
        return SerializerUtils.deWOSerializeList().stream().limit(2).collect(Collectors.toList());
     }

@@ -69,12 +69,13 @@
        return result;
     }
 
-    public static void serializeDistanceData(Object obj)
+    public static void serializeDistanceDataName(Object obj,
+                                                 String name)
     {
        // Let's serialize an Object
        try
        {
-          FileOutputStream fileOut = new FileOutputStream("/tmp/distance-data.txt");
+          FileOutputStream fileOut = new FileOutputStream("/tmp/" + name + "-distance-data.txt");
           ObjectOutputStream out = new ObjectOutputStream(fileOut);
           out.writeObject(obj);
           out.close();
@@ -91,13 +92,13 @@
     }
 
 
-    public static Map<String, Map<String, DistanceData>> deSerializeDistanceData()
+    public static Map<String, Map<String, DistanceData>> deSerializeDistanceDataName(String name)
     {
        // Let's deserialize an Object
        Map<String, Map<String, DistanceData>> result = null;
        try
        {
-          FileInputStream fileIn = new FileInputStream("/tmp/distance-data.txt");
+          FileInputStream fileIn = new FileInputStream("/tmp/" + name + "-distance-data.txt");
           ObjectInputStream in = new ObjectInputStream(fileIn);
           result = (Map<String, Map<String, DistanceData>>) in.readObject();
           in.close();

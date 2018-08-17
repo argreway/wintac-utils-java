@@ -9,6 +9,8 @@
 
  package com.sentryfire;
 
+ import java.util.ArrayList;
+ import java.util.Comparator;
  import java.util.List;
  import java.util.Objects;
  import java.util.stream.Collectors;
@@ -104,5 +106,13 @@
 
        return gson.toJson(addressList);
     }
+
+    public static List<String> getTechs()
+    {
+       List<String> sortedTech = new ArrayList<>(TechProfileConfiguration.getInstance().getDenTechToProfiles().keySet());
+       sortedTech.sort(Comparator.naturalOrder());
+       return sortedTech;
+    }
+
 
  }

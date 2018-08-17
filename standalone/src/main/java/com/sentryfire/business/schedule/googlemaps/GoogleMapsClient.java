@@ -80,20 +80,39 @@ import org.slf4j.LoggerFactory;
 
     public static Map<String, Map<String, DistanceData>> getFullMeshMatrix(List<WO> woList)
     {
-       Map<String, Map<String, DistanceData>> matrix = Maps.newHashMap();
 
-       List<String> locations = Lists.newArrayList(MapUtils.LOCATIONS_OFFICE);
-       List<String> woNums = Lists.newArrayList("0");
+       Map<String, String> origMap = Maps.newTreeMap();
 
+       origMap.put("0", MapUtils.LOCATIONS_OFFICE);
 
        for (WO wo : woList)
        {
           String location = wo.getFullAddress();
-          locations.add(location);
-          woNums.add(wo.getIN2());
+          origMap.put(wo.getIN2(), location);
        }
 
-       List<String> orig = Lists.newArrayList(locations);
+
+       Map<String, String> destMap = Maps.newTreeMap();
+       for (Map.Entry<String, String> e : origMap.entrySet())
+       {
+          destMap.put(e.getKey(), e.getValue());
+       }
+
+       return getFullMeshMatrix(origMap, destMap);
+    }
+
+    /**
+     * Map of key to location as params
+     */
+    public static Map<String, Map<String, DistanceData>> getFullMeshMatrix(Map<String, String> origMap,
+                                                                           Map<String, String> destMap)
+    {
+       Map<String, Map<String, DistanceData>> matrix = Maps.newHashMap();
+
+       List<String> origKeys = Lists.newLinkedList(origMap.keySet());
+       List<String> destKeys = Lists.newLinkedList(destMap.keySet());
+
+       List<String> orig = Lists.newArrayList(origMap.values());
        int origIdx = 0;
        while (orig.size() > 0)
        {
@@ -102,7 +121,7 @@ import org.slf4j.LoggerFactory;
           orig = orig.subList(origChunk, orig.size());
           log.info("Fetching distance for chunk [" + origIdx + "] to [" + (origIdx + origChunk) + "].");
 
-          List<String> dest = Lists.newArrayList(locations);
+          List<String> dest = Lists.newArrayList(destMap.values());
           int destIdx = 0;
           while (dest.size() > 0)
           {
@@ -116,18 +135,18 @@ import org.slf4j.LoggerFactory;
                 int dOrigIdx = origIdx;
                 for (DistanceMatrixRow gRow : googleMatrix.rows)
                 {
-                   String origWO = woNums.get(dOrigIdx);
-                   Map<String, DistanceData> row = matrix.get(origWO);
+                   String origKey = origKeys.get(dOrigIdx);
+                   Map<String, DistanceData> row = matrix.get(origKey);
                    if (row == null)
                    {
                       row = Maps.newHashMap();
-                      matrix.put(origWO, row);
+                      matrix.put(origKey, row);
                    }
 
                    int dDistIdx = destIdx;
                    for (DistanceMatrixElement e : gRow.elements)
                    {
-                      String destWO = woNums.get(dDistIdx);
+                      String destWO = destKeys.get(dDistIdx);
                       if (row.containsKey(destWO))
                          log.error("Duplicate " + destWO);
                       row.put(destWO, new DistanceData(e.distance.inMeters, e.duration.inSeconds));
