@@ -22,19 +22,21 @@
  import com.sentryfire.business.schedule.model.GeoCodeData;
  import com.sentryfire.config.AppConfiguartion;
  import com.sentryfire.model.WO;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
 
  public class SerializerUtils
  {
-
+    static Logger log = LoggerFactory.getLogger(SerializerUtils.class);
 
     public static void serializeWOList(Object obj)
     {
-       serializeObject(obj, "test-data");
+       serializeObject(obj, "wo-data");
     }
 
     public static List<WO> deSerializeWOList()
     {
-       return (List<WO>) deSerializeObject("test-data");
+       return (List<WO>) deSerializeObject("wo-data");
     }
 
     public static void serializeDistanceDataName(Object obj,
@@ -99,7 +101,8 @@
        }
        catch (IOException e2)
        {
-          e2.printStackTrace();
+          log.warn("Failed to deserialize: ", e2);
+
        }
        catch (Exception ex)
        {

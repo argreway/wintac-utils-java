@@ -15,6 +15,7 @@
  import java.util.stream.Collectors;
 
  import com.google.common.collect.Lists;
+ import com.sentryfire.config.AppConfiguartion;
 
  public class WOMeta implements Serializable
  {
@@ -42,6 +43,17 @@
        return itemStatHolderList.stream().map(ItemStatHolder::getSkill).collect(Collectors.toSet());
     }
 
+    public boolean hasEarlyItem(String tech)
+    {
+       List<String> items = getItemStatHolderList(tech).stream().map(ItemStatHolder::getItemCode).collect(Collectors.toList());
+       for (String ic : items)
+       {
+          if (AppConfiguartion.getInstance().getEarlyMorningItems().contains(ic))
+             return true;
+       }
+       return false;
+    }
+
     public Integer getWorkLoadMinutes()
     {
        return itemStatHolderList.stream().mapToInt(ItemStatHolder::getMin).sum();
@@ -51,7 +63,6 @@
     {
        return itemStatHolderList.stream().filter(i -> tech.equals(i.getTech())).mapToInt(ItemStatHolder::getMin).sum();
     }
-
 
     public Set<String> getTechsOnSite()
     {

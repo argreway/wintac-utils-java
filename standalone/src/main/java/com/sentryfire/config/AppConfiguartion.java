@@ -43,6 +43,7 @@
 
     protected static final String ITEMS_TIME_MINS = "itemsTimeMin";
     protected static final String ITEM_SKILL = "itemSkill";
+    protected static final String EARLY_ITEMS = "earlyItems";
 
     protected static final String DRIVE_TIME = "driveTime";
 
@@ -193,6 +194,11 @@
     public String getDataDirBase()
     {
        return getString(DATA_DIR_BASE, "/opt/sentry/data/");
+    }
+
+    public List<String> getEarlyMorningItems()
+    {
+       return getStringList(EARLY_ITEMS, Lists.newArrayList());
     }
 
     public Map<String, Integer> getItemTimeMinsMap()

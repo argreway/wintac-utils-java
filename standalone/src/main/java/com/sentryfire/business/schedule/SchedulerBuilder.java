@@ -172,9 +172,9 @@
      * Algorithm:
      * <p>
      * 1 - Schedule Items that are already have another tech first to try and guarantee free
-     * 2 - Schedule Items that are longer than 4 hours to a free day first
-     * -> Find closest WOs that would complete the day
-     * 3 - Schedule the rest of the WO from the farthest WO away then back to the shop
+     * 2 - Schedule Items that are longer than 4 hours to a free day first (or configured to be early morning)
+     * 3 - Find closest WOs that would complete the day
+     * 4 - Schedule the rest of the WO from the farthest WO away then back to the shop
      */
 
     protected List<WO> scheduleTechForMonth(MonthlyCalendar calendar,
@@ -202,12 +202,12 @@
              w2.getMetaData().getWorkLoadMinutes(calendar.getTech()), w1.getMetaData().getWorkLoadMinutes(calendar.getTech()))).
           collect(Collectors.toList());
 
-       List<WO> scheduledList = techMasterList.stream().filter(
+       List<WO> workingList = techMasterList.stream().filter(
           w -> w.getMetaData().getItemStatHolderList().stream().anyMatch(i -> i.getScheduledStart() != null)).
           collect(Collectors.toList());
 
        // Schedule WOs that already have a tech on site first.
-       for (WO wo : scheduledList)
+       for (WO wo : workingList)
        {
           DateTime scheduledStart = wo.getMetaData().getItemStatHolderList().stream().filter(
              i -> i.getScheduledStart() != null).findFirst().get().getScheduledStart();
@@ -222,10 +222,15 @@
        }
 
        // Schedule WOs that are longer than 4 hours
-       scheduledList = unScheduled.stream().filter(
-          w -> w.getMetaData().getWorkLoadMinutes(calendar.getTech()) >= 4 * 60).collect(Collectors.toList());
+       Set<WO> largeWO = unScheduled.stream().filter(
+          w -> w.getMetaData().getWorkLoadMinutes(calendar.getTech()) >= 4 * 60).collect(Collectors.toSet());
 
-       for (WO wo : scheduledList)
+       Set<WO> earlyWO = unScheduled.stream().filter(
+          w -> w.getMetaData().hasEarlyItem(calendar.getTech())).collect(Collectors.toSet());
+
+       largeWO.addAll(earlyWO);
+
+       for (WO wo : largeWO)
        {
           List<WO> done = scheduleDayFromOrigin(wo, calendar, in2ToWOMap, matrix);
           if (done == null)
@@ -245,13 +250,13 @@
 
        while (unScheduled.size() > 0)
        {
-          scheduledList = scheduleDayFromOrigin(unScheduled.get(0), calendar, in2ToWOMap, matrix);
-          if (scheduledList == null)
+          workingList = scheduleDayFromOrigin(unScheduled.get(0), calendar, in2ToWOMap, matrix);
+          if (workingList == null)
           {
              break;
           }
-          unScheduled.removeAll(scheduledList);
-          completedWOList.addAll(scheduledList);
+          unScheduled.removeAll(workingList);
+          completedWOList.addAll(workingList);
        }
 
        log.info(calendar.printCalendar(false));
@@ -292,6 +297,9 @@
                                    Map<String, Map<String, DistanceData>> matrix,
                                    Integer currentMinsLeft)
     {
+       if (matrix.get(originWO.getIN2()) == null)
+          return null;
+
        for (Map.Entry<String, DistanceData> entry : matrix.get(originWO.getIN2()).entrySet())
        {
           // Break we have scheduled the whole day
@@ -353,24 +361,22 @@
           skillMap.put(s, wos);
        }
 
-       // TODO Break Up By GEO Area / Each Sub Category and match to tech
-
        for (Map.Entry<SKILL, List<WO>> entry : skillMap.entrySet())
        {
           // Do FE last as filler
           if (SKILL.FE.equals(entry.getKey()))
              continue;
-          updateMapBySkill(sortedTechs, result, entry.getKey(), entry.getValue());
+          distributeBySkill(sortedTechs, result, entry.getKey(), entry.getValue());
        }
-       updateMapBySkill(sortedTechs, result, SKILL.FE, skillMap.get(SKILL.FE));
+       distributeBySkill(sortedTechs, result, SKILL.FE, skillMap.get(SKILL.FE));
 
        return result;
     }
 
-    private void updateMapBySkill(Collection<TechProfile> techProfileList,
-                                  Map<String, List<WO>> result,
-                                  SKILL skill,
-                                  List<WO> wos)
+    private void distributeBySkill(Collection<TechProfile> techProfileList,
+                                   Map<String, List<WO>> result,
+                                   SKILL skill,
+                                   List<WO> wos)
     {
        if (wos.isEmpty())
           return;

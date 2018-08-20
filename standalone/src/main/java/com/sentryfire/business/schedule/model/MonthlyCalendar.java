@@ -12,7 +12,6 @@
  import java.util.List;
  import java.util.Map;
  import java.util.Objects;
- import java.util.Random;
  import java.util.Set;
  import java.util.TreeMap;
  import java.util.stream.Collectors;
@@ -145,6 +144,8 @@
     // Private Business Helpers
     //////////////////////////////////////////
 
+    int evenIdx = 0;
+
     private EventTask scheduleDailyTask(WO wo,
                                         Day day,
                                         Integer timeForTechsItems)
@@ -162,10 +163,9 @@
           locationDaysToTry.add(day);
        else if (!freeDays.isEmpty())
        {
-          Random rand = new Random();
-          // Randomize free days so heavy work load is not always at the beginning
-          int dayNumber = rand.nextInt(freeDays.size());
-//          int dayNumber = 0;
+          int dayNumber = 0;
+          if (freeDays.size() > 1)
+             dayNumber = evenIdx % 2;
           locationDaysToTry.add(freeDays.get(dayNumber));
        }
 
