@@ -61,7 +61,7 @@
        WorkLoadCalculator.calculateWorkLoad(cosprings);
 
        // Serialize after we insert line item info - for remote debugging
-       SerializerUtils.serializeList(woList);
+       SerializerUtils.serializeWOList(woList);
 
        try
        {
@@ -439,12 +439,12 @@
 
        if (full)
        {
-          List<WO> result = SerializerUtils.deWOSerializeList();
+          List<WO> result = SerializerUtils.deSerializeWOList();
           if (result == null)
              result = DAOFactory.getWipDao().getHistoryWOAndItems(start.toDateTime(), end.toDateTime());
           return result;
        }
-       return SerializerUtils.deWOSerializeList().stream().limit(2).collect(Collectors.toList());
+       return SerializerUtils.deSerializeWOList().stream().limit(2).collect(Collectors.toList());
     }
 
     protected void submitCalendarToGoogle(ScheduleCalendar calendar)

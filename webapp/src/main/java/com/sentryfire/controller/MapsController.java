@@ -80,12 +80,18 @@
           {
              response.getWriter().println("<option>" + date + "</option>");
           }
+          response.getWriter().println("<option>ALL</option>");
        }
        else if (techID != null && dateVal != null)
        {
-          List<WO> woList = calMap.get(techID).get(dateVal).stream().filter(Objects::nonNull).sorted(
-             Comparator.comparingLong(MapsController::getStartMillis))
-             .collect(Collectors.toList());
+          List<WO> woList;
+          if (dateVal.equals("ALL"))
+             woList = calMap.get(techID).values().stream().flatMap(List::stream).filter(Objects::nonNull).collect(Collectors.toList());
+          else
+             woList = calMap.get(techID).get(dateVal).stream().filter(Objects::nonNull).sorted(
+                Comparator.comparingLong(MapsController::getStartMillis))
+                .collect(Collectors.toList());
+
           response.getWriter().println(WebUtilities.jsonArrayList(woList));
        }
     }

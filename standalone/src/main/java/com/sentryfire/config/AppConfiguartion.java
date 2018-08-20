@@ -61,6 +61,8 @@
     protected static final String CAL_EMAIL_DESC = "calEmailDesc";
     protected static final String CAL_SCHEDULER_EMAIL = "calSchedulerEmail";
 
+    protected static final String DATA_DIR_BASE = "dataDirBase";
+
     //*******************//
     // Constructors
     //*******************//
@@ -186,6 +188,11 @@
     public String getSchedulerEmail()
     {
        return getString(CAL_SCHEDULER_EMAIL, "scheduler@com.sentryfire.com");
+    }
+
+    public String getDataDirBase()
+    {
+       return getString(DATA_DIR_BASE, "/opt/sentry/data");
     }
 
     public Map<String, Integer> getItemTimeMinsMap()
