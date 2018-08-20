@@ -12,16 +12,19 @@
  import java.util.ArrayList;
  import java.util.Comparator;
  import java.util.List;
+ import java.util.Map;
  import java.util.Objects;
  import java.util.stream.Collectors;
 
  import javax.swing.table.DefaultTableModel;
 
  import com.google.api.client.util.DateTime;
+ import com.google.common.collect.Lists;
  import com.google.gson.Gson;
  import com.google.gson.GsonBuilder;
  import com.sentryfire.business.schedule.SchedulerBuilder;
  import com.sentryfire.business.schedule.googlecalendar.CalendarManager;
+ import com.sentryfire.business.schedule.model.GeoCodeData;
  import com.sentryfire.config.TechProfileConfiguration;
  import com.sentryfire.model.WO;
  import com.sentryfire.persistance.DAOFactory;
@@ -97,7 +100,7 @@
 
     }
 
-    public static String jsonArrayList(List<WO> wos)
+    public static String jsonAddressArrayList(List<WO> wos)
     {
 
        List<String> addressList = wos.stream().map(WO::getFullAddress).filter(Objects::nonNull).collect(Collectors.toList());
@@ -105,6 +108,23 @@
        Gson gson = builder.create();
 
        return gson.toJson(addressList);
+    }
+
+    public static String jsonGeoArrayList(List<WO> wos,
+                                          Map<String, GeoCodeData> geoCodeDataMap)
+    {
+
+       List<GeoCodeData> geoCodeList = Lists.newArrayList();
+
+       for (WO wo : wos)
+       {
+          String addr = wo.getFullAddress();
+          geoCodeList.add(geoCodeDataMap.get(addr));
+       }
+       GsonBuilder builder = new GsonBuilder();
+       Gson gson = builder.create();
+
+       return gson.toJson(geoCodeList);
     }
 
     public static List<String> getTechs()

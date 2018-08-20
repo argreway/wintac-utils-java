@@ -192,7 +192,7 @@
 
     public String getDataDirBase()
     {
-       return getString(DATA_DIR_BASE, "/opt/sentry/data");
+       return getString(DATA_DIR_BASE, "/opt/sentry/data/");
     }
 
     public Map<String, Integer> getItemTimeMinsMap()

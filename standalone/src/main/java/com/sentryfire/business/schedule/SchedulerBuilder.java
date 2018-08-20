@@ -21,11 +21,13 @@
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
  import com.google.common.collect.Sets;
+ import com.google.maps.model.Geometry;
  import com.sentryfire.business.schedule.googlecalendar.CalendarManager;
  import com.sentryfire.business.schedule.googlecalendar.CalenderUtils;
  import com.sentryfire.business.schedule.googlemaps.GoogleMapsClient;
  import com.sentryfire.business.schedule.model.DistanceData;
  import com.sentryfire.business.schedule.model.EventTask;
+ import com.sentryfire.business.schedule.model.GeoCodeData;
  import com.sentryfire.business.schedule.model.MonthlyCalendar;
  import com.sentryfire.business.schedule.model.ScheduleCalendar;
  import com.sentryfire.business.utils.SerializerUtils;
@@ -88,6 +90,9 @@
        // Filter out raw list
        List<WO> woList = filterRawWOList(rawList, confirmed.values().stream().flatMap(List::stream).collect(Collectors.toList()));
 
+       // Geo Code if Needed
+       geoCodeWOList(woList);
+
        ScheduleCalendar calendar = buildSchedule(profileMap, woList, start, in2ToWOList, confirmed);
        submitCalendarToGoogle(calendar);
     }
@@ -95,6 +100,37 @@
     ////////////////
     // Helpers
     ////////////////
+
+    protected void geoCodeWOList(List<WO> woList)
+    {
+
+       Map<String, GeoCodeData> geoCodeDataMap = SerializerUtils.deSerializeGeoCodeMap();
+       if (geoCodeDataMap == null)
+          geoCodeDataMap = Maps.newHashMap();
+
+       int i = 0;
+       for (WO wo : woList)
+       {
+          if (i % 25 == 0)
+             log.info("Geo-coding [" + i + "] of [" + woList.size() + "]");
+          i++;
+          String addr = wo.getFullAddress();
+          GeoCodeData data = geoCodeDataMap.get(addr);
+          if (data == null)
+          {
+             Geometry geometry = GoogleMapsClient.geocodeAddress(addr);
+             if (geometry == null)
+             {
+                log.error("Failed to get geometry for address [" + addr + "] in2 [" + wo.getIN2() + "]");
+                continue;
+             }
+             data = new GeoCodeData(geometry.location.lat, geometry.location.lng, wo.getIN2(), addr);
+             geoCodeDataMap.put(addr, data);
+          }
+       }
+
+       SerializerUtils.serializeGeoCodeMap(geoCodeDataMap);
+    }
 
     protected ScheduleCalendar buildSchedule(final Map<String, TechProfile> techToProfile,
                                              final List<WO> rawList,
@@ -502,7 +538,7 @@
           for (ItemStatHolder item : wo.getMetaData().getItemStatHolderList())
           {
              if (item.getItemCode().equals("MONITORING") || item.getItemCode().equals("SC")
-                 || item.getItemCode().equals("MONTHLY_BILLING_NT"))
+                 || item.getItemCode().equals("MONTHLY_BILLING_NT") || item.getItemCode().equals("PERMIT"))
                 continue;
              else
                 return false;

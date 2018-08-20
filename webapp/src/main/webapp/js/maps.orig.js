@@ -16,9 +16,45 @@ function initialize()
     });
 }
 
-function displayMultipleMarkers(addresses)
+async function geoCodeAndRoute(addresses)
+{
+    var geocoder = new google.maps.Geocoder();
+    var markerArray = [];
+    for (var i = 0; i < addresses.length; i++)
+    {
+        if (i != 0 && (i % 5) == 0)
+        {
+            await sleep(2000);
+        }
+        console.log("Geocoding " + i)
+
+        var currAddress = addresses[i];
+        geocoder.geocode({'address': currAddress}, routeCallBack(addresses, i, markerArray));
+    }
+}
+
+function routeCallBack(addresses,
+                       i,
+                       markerArray)
+{
+    var geoCallBack = function (results,
+                                status) {
+        console.log("Status [ " + i + "] " + status)
+        markerArray[i] = results[0];
+        progress(addresses.length, i);
+        if (markerArray.length == addresses.length)
+        {
+            routeWaypoints(markerArray);
+        }
+
+    };
+    return geoCallBack;
+}
+
+function geoCodeAddresses(addresses)
 {
     var infoWindow = new google.maps.InfoWindow();
+    var geocoder = new google.maps.Geocoder();
     var bounds = new google.maps.LatLngBounds();
     var map = new google.maps.Map(document.getElementById('map'), {
         zoom: 10,
@@ -28,39 +64,14 @@ function displayMultipleMarkers(addresses)
 
     for (var i = 0; i < addresses.length; i++)
     {
-        displayMarker(addresses[i], bounds, infoWindow, map);
+        var currAddress = addresses[i];
+        geocoder.geocode({'address': currAddress}, makeCallback(i, map, bounds, infoWindow));
     }
 
-    // var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function (event) {
-    //     this.setZoom(14);
-    //     google.maps.event.removeListener(boundsListener);
-    // });
-}
-
-function displayMarker(address,
-                       bounds,
-                       infoWindow,
-                       resultsMap)
-{
-    var markerContent = "Address: " + address.address;
-
-    var marker = new google.maps.Marker(
-            {
-                map: resultsMap,
-                position: new google.maps.LatLng(address.lat, address.lng),
-                title: markerContent
-            });
-    resultsMap.setCenter(marker.getPosition());
-    bounds.extend(marker.getPosition());
-
-    resultsMap.fitBounds(bounds);
-    google.maps.event.addListener(marker, 'click', (function (marker,
-                                                              markerContent) {
-        return function () {
-            infoWindow.setContent(markerContent);
-            infoWindow.open(map, marker);
-        }
-    })(marker, markerContent));
+    var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function (event) {
+        this.setZoom(14);
+        google.maps.event.removeListener(boundsListener);
+    });
 }
 
 function routeWaypoints(locations)
@@ -85,18 +96,18 @@ function routeWaypoints(locations)
 
     for (i = 0; i < locations.length; i++)
     {
-        var markerContent = "Stop [" + (i + 1) + "] -> " + " " + locations[i].address;
+        var markerContent = "Stop [" + (i + 1) + "] -> " + " " + locations[i].formatted_address;
         console.log(markerContent);
         marker = new google.maps.Marker(
                 {
-                    position: new google.maps.LatLng(locations[i].lat, locations[i].lng),
+                    position: locations[i].geometry.location,
                     title: markerContent
                 });
 
         google.maps.event.addListener(marker, 'click', (function (marker,
                                                                   i) {
             return function () {
-                var markerContent = "Stop [" + (i + 1) + "] -> " + " " + locations[i].address;
+                var markerContent = "Stop [" + (i + 1) + "] -> " + " " + locations[i].formatted_address;
                 infowindow.setContent(markerContent);
                 infowindow.open(map, marker);
             }
@@ -105,17 +116,17 @@ function routeWaypoints(locations)
         if (i == 0)
         {
 
-            console.log("Origin " + locations[i].address)
+            console.log("Origin " + locations[i].formatted_address)
             request.origin = marker.getPosition();
         }
         else if (i == locations.length - 1)
         {
-            console.log("Dest " + locations[i].address)
+            console.log("Dest " + locations[i].formatted_address)
             request.destination = marker.getPosition();
         }
         else
         {
-            console.log("Waypoint " + locations[i].address)
+            console.log("Waypoint " + locations[i].formatted_address)
             if (!request.waypoints) request.waypoints = [];
             request.waypoints.push(
                     {
@@ -132,6 +143,44 @@ function routeWaypoints(locations)
             directionsDisplay.setDirections(result);
         }
     });
+}
+
+function makeCallback(addressIndex,
+                      resultsMap,
+                      bounds,
+                      infoWindow)
+{
+    var geocodeCallBack = function (results,
+                                    status) {
+
+        if (status == 'OK')
+        {
+            resultsMap.setCenter(results[0].geometry.location);
+            bounds.extend(results[0].geometry.location);
+            // console.log("cords " + results[0].geometry.location);
+            var markerContent = "Stop [" + (addressIndex + 1) + "] -> " + " " + results[0].formatted_address;
+            var marker = new google.maps.Marker(
+                    {
+                        map: resultsMap,
+                        position: results[0].geometry.location,
+                        title: markerContent
+                    });
+
+            resultsMap.fitBounds(bounds);
+            google.maps.event.addListener(marker, 'click', (function (marker,
+                                                                      markerContent) {
+                return function () {
+                    infoWindow.setContent(markerContent);
+                    infoWindow.open(map, marker);
+                }
+            })(marker, markerContent));
+        }
+        else
+        {
+            throw('No results found: ' + status);
+        }
+    }
+    return geocodeCallBack;
 }
 
 
@@ -221,7 +270,7 @@ $("#loadTechRoute").on('click', function () {
     //     disabled: true,
     //     label: "Loading Map..."
     // });
-    //dialog.dialog("open");
+    dialog.dialog("open");
 
     techVal = $('#select-tech').val();
     dateVal = $('#select-date').val();
@@ -231,9 +280,9 @@ $("#loadTechRoute").on('click', function () {
         $('#map').empty();
         $('#right-panel').empty();
         var addrs = JSON.parse(data);
-        if (addrs.length < 2 || dateVal == "ALL")
-            displayMultipleMarkers(addrs);
+        if (addrs.length < 2)
+            geoCodeAddresses(addrs);
         else
-            routeWaypoints(addrs);
+            geoCodeAndRoute(addrs);
     });
 });

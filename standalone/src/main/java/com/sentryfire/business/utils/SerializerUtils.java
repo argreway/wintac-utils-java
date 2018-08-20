@@ -19,6 +19,7 @@
  import java.util.Map;
 
  import com.sentryfire.business.schedule.model.DistanceData;
+ import com.sentryfire.business.schedule.model.GeoCodeData;
  import com.sentryfire.config.AppConfiguartion;
  import com.sentryfire.model.WO;
 
@@ -48,6 +49,16 @@
        return (Map<String, Map<String, DistanceData>>) deSerializeObject(name + "-distance-data");
     }
 
+    public static void serializeGeoCodeMap(Object obj)
+    {
+       serializeObject(obj, "geo-code");
+    }
+
+    public static Map<String, GeoCodeData> deSerializeGeoCodeMap()
+    {
+       return (Map<String, GeoCodeData>) deSerializeObject("geo-code");
+    }
+
     /////////////
     // protected
     /////////////
@@ -75,7 +86,7 @@
     }
 
 
-    public static Object deSerializeObject(String file)
+    protected static Object deSerializeObject(String file)
     {
        Object result = null;
        try

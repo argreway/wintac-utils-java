@@ -10,33 +10,32 @@
  package com.sentryfire.business.schedule.googlemaps;
 
  import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+ import java.util.Comparator;
+ import java.util.LinkedHashMap;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.concurrent.TimeUnit;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.maps.DirectionsApi;
-import com.google.maps.DistanceMatrixApi;
-import com.google.maps.DistanceMatrixApiRequest;
-import com.google.maps.GeoApiContext;
-import com.google.maps.GeocodingApi;
-import com.google.maps.model.DistanceMatrix;
-import com.google.maps.model.DistanceMatrixElement;
-import com.google.maps.model.DistanceMatrixRow;
-import com.google.maps.model.GeocodingResult;
-import com.google.maps.model.TravelMode;
-import com.google.maps.model.Unit;
-import com.sentryfire.business.schedule.model.DistanceData;
-import com.sentryfire.config.ExternalConfiguartion;
-import com.sentryfire.model.WO;
-import com.sun.tools.javac.util.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.google.maps.DirectionsApi;
+ import com.google.maps.DistanceMatrixApi;
+ import com.google.maps.DistanceMatrixApiRequest;
+ import com.google.maps.GeoApiContext;
+ import com.google.maps.GeocodingApi;
+ import com.google.maps.model.DistanceMatrix;
+ import com.google.maps.model.DistanceMatrixElement;
+ import com.google.maps.model.DistanceMatrixRow;
+ import com.google.maps.model.GeocodingResult;
+ import com.google.maps.model.Geometry;
+ import com.google.maps.model.TravelMode;
+ import com.google.maps.model.Unit;
+ import com.sentryfire.business.schedule.model.DistanceData;
+ import com.sentryfire.config.ExternalConfiguartion;
+ import com.sentryfire.model.WO;
+ import com.sun.tools.javac.util.Pair;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
 
  public class GoogleMapsClient
  {
@@ -47,26 +46,29 @@ import org.slf4j.LoggerFactory;
 
     }
 
-    public static void geocodingApi()
+    public static Geometry geocodeAddress(String address)
     {
        try
        {
           GeoApiContext context = new GeoApiContext.Builder()
              .apiKey(ExternalConfiguartion.getInstance().getGoogleMapApiKey()).build();
-          //           PlacesApi.nearbySearchNextPage();
-          //
-          GeocodingResult[] results = GeocodingApi.geocode(
-             context,
-             "1600 Amphitheatre Parkway Mountain View, CA 94043").await();
-          Gson gson = new GsonBuilder().setPrettyPrinting().create();
-          System.out.println(gson.toJson(results[0].addressComponents));
+
+//          GeocodingResult[] results = GeocodingApi.geocode(context, "1600 Amphitheatre Parkway Mountain View, CA 94043").await();
+          GeocodingResult[] results = GeocodingApi.geocode(context, address).await();
+
+          if (results == null || results.length == 0)
+             return null;
+
+//          Gson gson = new GsonBuilder().setPrettyPrinting().create();
+//          System.out.println(gson.toJson(results[0].addressComponents));
+          return results[0].geometry;
        }
        catch (Exception e)
        {
           log.error("Failed to query googlemaps api: ", e);
        }
 
-
+       return null;
     }
 
     static boolean print = false;
