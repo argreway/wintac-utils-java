@@ -138,34 +138,36 @@
              updateMaps(task, d, task.getWo());
           }
        }
+
+       // Now we know the total free days for the month
+       counterMax = freeDays.size();
     }
 
     //////////////////////////////////////////
     // Private Business Helpers
     //////////////////////////////////////////
 
-    int evenIdx = 0;
+    protected int counterIndex = 0;
+    protected int counterMax = 0;
 
     private EventTask scheduleDailyTask(WO wo,
                                         Day day,
                                         Integer timeForTechsItems)
     {
        EventTask scheduledTask;
-//       // Find days with free slots where we are already close to that location or
-//       // schedule location to a new free day if available
-//       Set<Day> locationDays = daysAtLocation.get(wo.getCITY());
-//       if (locationDays == null)
-//          locationDays = Sets.newHashSet();
-//       List<Day> locationDaysToTry = Lists.newArrayList(locationDays);
 
        List<Day> locationDaysToTry = Lists.newArrayList();
        if (day != null)
           locationDaysToTry.add(day);
        else if (!freeDays.isEmpty())
        {
-          int dayNumber = 0;
-          if (freeDays.size() > 1)
-             dayNumber = evenIdx % 2;
+          // Every other day
+          int dayNumber = counterIndex;
+          if (counterIndex < counterMax)
+             counterIndex++;
+          else
+             counterIndex = 0;
+
           locationDaysToTry.add(freeDays.get(dayNumber));
        }
 

@@ -25,8 +25,8 @@ $(function () {
 });
 
 ///////// Load Other Files //////////
-$("#p1content").load("scheduler.jsp");
-$("#panel-maps-content").load("maps.jsp");
+// $("#p1content").load("scheduler.jsp");
+// $("#panel-maps-content").load("maps.jsp");
 
 // $('#acc1').trigger("click");
 
