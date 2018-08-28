@@ -11,22 +11,46 @@
 
  import java.io.Serializable;
 
+ import com.google.maps.model.GeocodingResult;
+
  public class GeoCodeData implements Serializable
  {
+    GeocodingResult geocodingResult;
     Double lat;
     Double lng;
     String woNumber;
-    String address;
+    String fullAddress;
+    String street;
+    String city;
+    String zip;
 
-    public GeoCodeData(Double lat,
+    public GeoCodeData(GeocodingResult geocodingResult,
+                       Double lat,
                        Double lng,
                        String woNumber,
-                       String address)
+                       String fullAddress,
+                       String street,
+                       String city,
+                       String zip)
     {
+       this.geocodingResult = geocodingResult;
        this.lat = lat;
        this.lng = lng;
        this.woNumber = woNumber;
-       this.address = address;
+       this.fullAddress = fullAddress;
+       this.street = street;
+       this.city = city;
+       this.zip = zip;
+    }
+
+    public GeocodingResult getGeocodingResult()
+    {
+       return geocodingResult;
+    }
+
+    public void setGeocodingResult(GeocodingResult geocodingResult)
+    {
+       this.geocodingResult = geocodingResult;
     }
 
     public Double getLat()
@@ -59,24 +83,58 @@
        this.woNumber = woNumber;
     }
 
-    public String getAddress()
+    public String getFullAddress()
     {
-       return address;
+       return fullAddress;
     }
 
-    public void setAddress(String address)
+    public void setFullAddress(String fullAddress)
     {
-       this.address = address;
+       this.fullAddress = fullAddress;
+    }
+
+    public String getStreet()
+    {
+       return street;
+    }
+
+    public void setStreet(String street)
+    {
+       this.street = street;
+    }
+
+    public String getCity()
+    {
+       return city;
+    }
+
+    public void setCity(String city)
+    {
+       this.city = city;
+    }
+
+    public String getZip()
+    {
+       return zip;
+    }
+
+    public void setZip(String zip)
+    {
+       this.zip = zip;
     }
 
     @Override
     public String toString()
     {
        return "GeoCodeData{" +
-              "lat='" + lat + '\'' +
-              ", lng='" + lng + '\'' +
+              "geocodingResult=" + geocodingResult +
+              ", lat=" + lat +
+              ", lng=" + lng +
               ", woNumber='" + woNumber + '\'' +
-              ", address='" + address + '\'' +
+              ", fullAddress='" + fullAddress + '\'' +
+              ", street='" + street + '\'' +
+              ", city='" + city + '\'' +
+              ", zip='" + zip + '\'' +
               '}';
     }
  }

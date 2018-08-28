@@ -24,18 +24,22 @@ $(function () {
     $("#menu").menu();
 });
 
-///////// Load Other Files //////////
-// $("#p1content").load("scheduler.jsp");
-// $("#panel-maps-content").load("maps.jsp");
-
-// $('#acc1').trigger("click");
-
 function refreshIframe()
 {
     var ifr = document.getElementsByName('g-calendar')[0];
     ifr.src = ifr.src;
 }
 
+function refreshReports()
+{
+    var ifr = document.getElementsByName('reports-frame')[0];
+    ifr.src = ifr.src;
+}
+
 $(function () {
     $("#draggable").draggable();
 });
+
+// $("#btn-report").on('click', function () {
+//     refreshReports();
+// });

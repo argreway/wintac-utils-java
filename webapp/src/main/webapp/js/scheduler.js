@@ -5,20 +5,11 @@ function initDatePickers()
                                    dateFormat: "dd-M-yy",
                                    minDate: null,
                                    onSelect: function (date) {
-                                       var val = $(this).datepicker('getDate');
-                                       console.log("date " + val);
-                                       var dateVal = new Date(date);
-                                       var val = $(this).datepicker('setDate', dateVal);
-                                       var queryDate = '2009-11-01',
-                                               dateParts = queryDate.match(/(\d+)/g)
-                                       realDate = new Date(2009, 11, 1);
-                                       // months are 0-based!
-
-                                       $('#beginDate').datepicker({dateFormat: 'yy-mm-dd'}); // format to show
-                                       $('#endDate').datepicker('setDate', realDate);
-                                       var val = $(this).datepicker('getDate');
-                                       console.log("date " + val);
-
+                                       var selectedDate = $(this).datepicker('getDate');
+                                       $('#endDate').datepicker("setDate", selectedDate);
+                                       $('#endDate').datepicker("option", "minDate", selectedDate);
+                                       $('#endDate').datepicker("option", "maxDate", selectedDate.getDate() + 32);
+                                       $(this).datepicker("option", "minDate", selectedDate);
                                    }
                                });
     $('#endDate').datepicker({
@@ -26,8 +17,7 @@ function initDatePickers()
                                  dateFormat: "dd-M-yy",
                                  minDate: null,
                                  onSelect: function (date) {
-                                     var val = $(this).datepicker('getDate');
-                                     console.log("date " + val);
+                                     $("#beginDate").datepicker("option", "minDate", null);
                                  }
                              });
 

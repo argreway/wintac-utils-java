@@ -9,9 +9,6 @@
 
  package com.sentryfire.business.schedule.googlemaps;
 
- import java.util.ArrayList;
- import java.util.Comparator;
- import java.util.LinkedHashMap;
  import java.util.List;
  import java.util.Map;
  import java.util.concurrent.TimeUnit;
@@ -27,7 +24,6 @@
  import com.google.maps.model.DistanceMatrixElement;
  import com.google.maps.model.DistanceMatrixRow;
  import com.google.maps.model.GeocodingResult;
- import com.google.maps.model.Geometry;
  import com.google.maps.model.TravelMode;
  import com.google.maps.model.Unit;
  import com.sentryfire.business.schedule.model.DistanceData;
@@ -41,38 +37,29 @@
  {
     static Logger log = LoggerFactory.getLogger(GoogleMapsClient.class);
 
-    public void route(List<WO> woList)
-    {
-
-    }
-
-    public static Geometry geocodeAddress(String address)
+    public static GeocodingResult geocodeAddress(String address)
     {
        try
        {
           GeoApiContext context = new GeoApiContext.Builder()
              .apiKey(ExternalConfiguartion.getInstance().getGoogleMapApiKey()).build();
 
-//          GeocodingResult[] results = GeocodingApi.geocode(context, "1600 Amphitheatre Parkway Mountain View, CA 94043").await();
           GeocodingResult[] results = GeocodingApi.geocode(context, address).await();
 
           if (results == null || results.length == 0)
              return null;
 
-//          Gson gson = new GsonBuilder().setPrettyPrinting().create();
-//          System.out.println(gson.toJson(results[0].addressComponents));
-          return results[0].geometry;
+          return results[0];
        }
        catch (Exception e)
        {
-          log.error("Failed to query googlemaps api: ", e);
+          log.error("Failed to geocode query using googlemaps api: ", e);
        }
 
        return null;
     }
 
     static boolean print = false;
-
 
     public static List<Pair<String, String>> getLatLongForAddress()
     {
@@ -166,40 +153,10 @@
        // Sort closest to farthest
        for (Map.Entry<String, Map<String, DistanceData>> entry : matrix.entrySet())
        {
-          Map<String, DistanceData> sortedMap = sortByClosestDistanceFirst(entry.getValue());
+          Map<String, DistanceData> sortedMap = MapUtils.sortByClosestDistanceFirst(entry.getValue());
           matrix.put(entry.getKey(), sortedMap);
        }
        return matrix;
-    }
-
-    public static Map<String, DistanceData> sortByClosestDistanceFirst(Map<String, DistanceData> map)
-    {
-       List<Map.Entry<String, DistanceData>> list = new ArrayList<>(map.entrySet());
-
-       list.sort(Map.Entry.comparingByValue(Comparator.comparingLong(DistanceData::getDistance)));
-
-       Map<String, DistanceData> result = new LinkedHashMap<>();
-       for (Map.Entry<String, DistanceData> entry : list)
-       {
-          result.put(entry.getKey(), entry.getValue());
-       }
-
-       return result;
-    }
-
-    public static Map<String, DistanceData> sortByFarthestDistanceFirst(Map<String, DistanceData> map)
-    {
-       List<Map.Entry<String, DistanceData>> list = new ArrayList<>(map.entrySet());
-
-       list.sort(Map.Entry.comparingByValue((f1, f2) -> Long.compare(f2.getDistance(), f1.getDistance())));
-
-       Map<String, DistanceData> result = new LinkedHashMap<>();
-       for (Map.Entry<String, DistanceData> entry : list)
-       {
-          result.put(entry.getKey(), entry.getValue());
-       }
-
-       return result;
     }
 
     public static DistanceMatrix getDistanceMatrix(List<String> origins,

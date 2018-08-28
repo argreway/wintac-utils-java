@@ -11,6 +11,7 @@
 
  import java.io.Serializable;
  import java.util.List;
+ import java.util.Objects;
  import java.util.Set;
  import java.util.stream.Collectors;
 
@@ -66,7 +67,7 @@
 
     public Set<String> getTechsOnSite()
     {
-       return itemStatHolderList.stream().map(ItemStatHolder::getTech).collect(Collectors.toSet());
+       return itemStatHolderList.stream().map(ItemStatHolder::getTech).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
     @Override

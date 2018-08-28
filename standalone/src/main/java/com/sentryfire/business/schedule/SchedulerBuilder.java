@@ -21,11 +21,9 @@
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
  import com.google.common.collect.Sets;
- import com.google.maps.model.Geometry;
  import com.sentryfire.business.schedule.googlecalendar.CalendarManager;
  import com.sentryfire.business.schedule.googlecalendar.CalenderUtils;
- import com.sentryfire.business.schedule.googlemaps.GoogleMapsClient;
- import com.sentryfire.business.schedule.model.DistanceData;
+ import com.sentryfire.business.schedule.googlemaps.MapUtils;
  import com.sentryfire.business.schedule.model.EventTask;
  import com.sentryfire.business.schedule.model.GeoCodeData;
  import com.sentryfire.business.schedule.model.MonthlyCalendar;
@@ -91,9 +89,13 @@
        List<WO> woList = filterRawWOList(rawList, confirmed.values().stream().flatMap(List::stream).collect(Collectors.toList()));
 
        // Geo Code if Needed
-       geoCodeWOList(woList);
+       Map<String, GeoCodeData> geoCodeMap = MapUtils.geoCodeWOList(woList);
+       Map<String, Map<String, Double>> distanceMatrix = MapUtils.calculateDistanceMatrix(geoCodeMap, geoCodeMap);
+       Map<String, GeoCodeData> geoCodeTechMap = MapUtils.geoCodeTechTerritory(profileMap);
+       Map<String, Map<String, Double>> territoryMatrix = MapUtils.calculateDistanceMatrix(geoCodeMap, geoCodeTechMap);
 
-       ScheduleCalendar calendar = buildSchedule(profileMap, woList, start, in2ToWOList, confirmed);
+
+       ScheduleCalendar calendar = buildSchedule(profileMap, woList, start, in2ToWOList, distanceMatrix, territoryMatrix, confirmed);
        submitCalendarToGoogle(calendar);
     }
 
@@ -101,41 +103,12 @@
     // Helpers
     ////////////////
 
-    protected void geoCodeWOList(List<WO> woList)
-    {
-
-       Map<String, GeoCodeData> geoCodeDataMap = SerializerUtils.deSerializeGeoCodeMap();
-       if (geoCodeDataMap == null)
-          geoCodeDataMap = Maps.newHashMap();
-
-       int i = 0;
-       for (WO wo : woList)
-       {
-          if (i % 25 == 0)
-             log.info("Geo-coding [" + i + "] of [" + woList.size() + "]");
-          i++;
-          String addr = wo.getFullAddress();
-          GeoCodeData data = geoCodeDataMap.get(addr);
-          if (data == null)
-          {
-             Geometry geometry = GoogleMapsClient.geocodeAddress(addr);
-             if (geometry == null)
-             {
-                log.error("Failed to get geometry for address [" + addr + "] in2 [" + wo.getIN2() + "]");
-                continue;
-             }
-             data = new GeoCodeData(geometry.location.lat, geometry.location.lng, wo.getIN2(), addr);
-             geoCodeDataMap.put(addr, data);
-          }
-       }
-
-       SerializerUtils.serializeGeoCodeMap(geoCodeDataMap);
-    }
-
     protected ScheduleCalendar buildSchedule(final Map<String, TechProfile> techToProfile,
                                              final List<WO> rawList,
                                              final org.joda.time.DateTime calStart,
                                              final Map<String, WO> in2ToWOMap,
+                                             final Map<String, Map<String, Double>> distanceMatrix,
+                                             final Map<String, Map<String, Double>> territoryMatrix,
                                              final Map<String, List<Event>> confirmedScheduled) throws Exception
     {
        ScheduleCalendar scheduleCalendar = new ScheduleCalendar(techToProfile.keySet(), calStart);
@@ -146,14 +119,14 @@
        List<WO> masterMonthList = Lists.newArrayList(rawList);
        Set<WO> completedList = Sets.newHashSet();
 
-       Map<String, List<WO>> distributedWOList = distributeWorkLoad(masterMonthList, techToProfile.values());
+       Map<String, List<WO>> distributedWOList = distributeWorkLoad(in2ToWOMap, masterMonthList, territoryMatrix, distanceMatrix, techToProfile.values());
 
        for (MonthlyCalendar techCal : scheduleCalendar.getTechCalendars().values())
        {
           String tech = techCal.getTech();
 
           List<WO> unScheduledList = distributedWOList.get(tech);
-          List<WO> completedWO = scheduleTechForMonth(techCal, distributedWOList.get(tech), in2ToWOMap);
+          List<WO> completedWO = scheduleTechForMonth(techCal, distanceMatrix, distributedWOList.get(tech), in2ToWOMap);
 
           masterMonthList.removeAll(completedWO);
           unScheduledList.removeAll(completedWO);
@@ -178,8 +151,9 @@
      */
 
     protected List<WO> scheduleTechForMonth(MonthlyCalendar calendar,
+                                            Map<String, Map<String, Double>> distanceMatrix,
                                             final List<WO> woList,
-                                            final Map<String, WO> in2ToWOMap) throws Exception
+                                            final Map<String, WO> in2ToWOMap)
     {
        log.info("Scheduling Tech: " + calendar.getTech());
        log.info("Cities to visit: " + woList.stream().map(WO::getCITY).collect(Collectors.toSet()));
@@ -190,11 +164,7 @@
        List<WO> completedWOList = Lists.newArrayList();
        List<WO> unScheduled = Lists.newArrayList(woList);
 
-       // Compute Distances Between WOs
-       Map<String, Map<String, DistanceData>> matrix = SerializerUtils.deSerializeDistanceDataName(calendar.getTech());
-       if (matrix == null)
-          matrix = GoogleMapsClient.getFullMeshMatrix(woList);
-       SerializerUtils.serializeDistanceDataName(matrix, calendar.getTech());
+       Map<String, Map<String, Double>> matrix = MapUtils.filterFullMatrix(woList, distanceMatrix);
 
        // Sort WO Longest to Shortest
        List<WO> techMasterList = woList.stream().sorted(
@@ -242,7 +212,7 @@
        }
 
        // Going reverse order distance from the shop
-       Map<String, DistanceData> shopDistance = GoogleMapsClient.sortByFarthestDistanceFirst(matrix.get("0"));
+       Map<String, Double> shopDistance = MapUtils.sortByFarthestDistanceFirst(matrix.get("0"));
        List<String> unScheduledIn2 = unScheduled.stream().map(WO::getIN2).collect(Collectors.toList());
        shopDistance.keySet().retainAll(unScheduledIn2);
 
@@ -267,7 +237,7 @@
     private List<WO> scheduleDayFromOrigin(WO originWO,
                                            MonthlyCalendar calendar,
                                            Map<String, WO> in2ToWOMap,
-                                           Map<String, Map<String, DistanceData>> matrix) throws Exception
+                                           Map<String, Map<String, Double>> matrix)
     {
        int currentMinsLeft = MIN_PER_DAY;
 
@@ -294,20 +264,20 @@
     private WO getClosestWorkOrder(WO originWO,
                                    MonthlyCalendar calendar,
                                    Map<String, WO> in2ToWOMap,
-                                   Map<String, Map<String, DistanceData>> matrix,
+                                   Map<String, Map<String, Double>> matrix,
                                    Integer currentMinsLeft)
     {
        if (matrix.get(originWO.getIN2()) == null)
           return null;
 
-       for (Map.Entry<String, DistanceData> entry : matrix.get(originWO.getIN2()).entrySet())
+       for (Map.Entry<String, Double> entry : matrix.get(originWO.getIN2()).entrySet())
        {
           // Break we have scheduled the whole day
           if (currentMinsLeft < 60)
              break;
 
-          // Skip self and any WO farther than 25 minutes away
-          if (entry.getKey().equals(originWO.getIN2()) || entry.getKey().equals("0") || entry.getValue().getDuration() / 60 > 25)
+          // Skip self and any WO farther than ~15 miles away
+          if (entry.getKey().equals(originWO.getIN2()) || entry.getKey().equals("0") || entry.getValue() > 15000)
              continue;
 
           // Longer than time left in day
@@ -327,8 +297,8 @@
              continue;
 
           // Distance must be less than from shop to orig
-          long shopToOrig = matrix.get("0").get(originWO.getIN2()).getDistance();
-          long shopToDest = matrix.get("0").get(destWO.getIN2()).getDistance();
+          double shopToOrig = matrix.get("0").get(originWO.getIN2());
+          double shopToDest = matrix.get("0").get(destWO.getIN2());
           if (shopToDest > shopToOrig)
              continue;
 
@@ -340,7 +310,10 @@
     /**
      * Separate out work by Skills and GEO Location
      */
-    protected Map<String, List<WO>> distributeWorkLoad(List<WO> masterMonthList,
+    protected Map<String, List<WO>> distributeWorkLoad(final Map<String, WO> in2ToWOMap,
+                                                       List<WO> masterMonthList,
+                                                       Map<String, Map<String, Double>> territoryMatrix,
+                                                       Map<String, Map<String, Double>> fullMatrix,
                                                        Collection<TechProfile> techProfileList)
     {
        // Sort tech list alphabetical for deterministic results
@@ -366,15 +339,18 @@
           // Do FE last as filler
           if (SKILL.FE.equals(entry.getKey()))
              continue;
-          distributeBySkill(sortedTechs, result, entry.getKey(), entry.getValue());
+          distributeBySkill(sortedTechs, fullMatrix, territoryMatrix, result, in2ToWOMap, entry.getKey(), entry.getValue());
        }
-       distributeBySkill(sortedTechs, result, SKILL.FE, skillMap.get(SKILL.FE));
+       distributeBySkill(sortedTechs, fullMatrix, territoryMatrix, result, in2ToWOMap, SKILL.FE, skillMap.get(SKILL.FE));
 
        return result;
     }
 
     private void distributeBySkill(Collection<TechProfile> techProfileList,
+                                   Map<String, Map<String, Double>> fullMatrix,
+                                   Map<String, Map<String, Double>> territoryMatrix,
                                    Map<String, List<WO>> result,
+                                   final Map<String, WO> in2ToWOMap,
                                    SKILL skill,
                                    List<WO> wos)
     {
@@ -388,51 +364,29 @@
           return;
        }
 
-       // Assign work orders based on territory if required
-       Map<String, Map<String, DistanceData>> matrix = null;
-       List<WO> assignedWorkList = wos.stream().filter(w -> shouldAssignWO(w, skill)).collect(Collectors.toList());
-       if (!assignedWorkList.isEmpty())
-       {
-          Map<String, String> origLocations = Maps.newTreeMap();
-          assignedWorkList.forEach(w -> origLocations.put(w.getIN2(), w.getFullAddress()));
-
-          Map<String, String> destTerritories = Maps.newTreeMap();
-          for (TechProfile p : availableTechs)
-          {
-             if (p.getTerritory() != null && !p.getTerritory().isEmpty())
-                destTerritories.put(p.getName(), p.getTerritory());
-          }
-
-          matrix = SerializerUtils.deSerializeDistanceDataName(skill.name());
-          if (matrix == null)
-             matrix = GoogleMapsClient.getFullMeshMatrix(origLocations, destTerritories);
-          SerializerUtils.serializeDistanceDataName(matrix, skill.name());
-       }
-
        int techIdx = 0;
        for (WO wo : wos)
        {
           List<ItemStatHolder> itemsForSkill = wo.getMetaData().getItemStatHolderList().stream().filter(i -> skill.equals(i.getSkill())).collect(Collectors.toList());
+          Set<String> availableAlreadyOnSite = availableTechs.stream().map(TechProfile::getName).collect(Collectors.toSet());
+          availableAlreadyOnSite.retainAll(wo.getMetaData().getTechsOnSite());
 
           //  Assign WO by territory
-          if (matrix != null && matrix.get(wo.getIN2()) != null)
+          if (shouldAssignWO(wo, skill))
           {
-             Map.Entry<String, DistanceData> techEntry = matrix.get(wo.getIN2()).entrySet().iterator().next();
+             Map.Entry<String, Double> techEntry = territoryMatrix.get(wo.getIN2()).entrySet().iterator().next();
              String tech = techEntry.getKey();
              log.info("Assigning " + tech + " to " + wo.getIN2());
              itemsForSkill.forEach(i -> i.setTech(tech));
              result.get(tech).add(wo);
           }
-
-          // Assign techs in round robin order unless one is already on site
-          Set<String> availableAlreadyOnSite = availableTechs.stream().map(TechProfile::getName).collect(Collectors.toSet());
-          availableAlreadyOnSite.retainAll(wo.getMetaData().getTechsOnSite());
-
-          if (!availableAlreadyOnSite.isEmpty())
+          // Give to tech on site if assignment not required
+          else if (!availableAlreadyOnSite.isEmpty())
           {
              String tech = availableAlreadyOnSite.iterator().next();
              itemsForSkill.forEach(i -> i.setTech(tech));
           }
+          // Give to tech by customer preference
           else if (TechProfileConfiguration.getInstance().getAllCustomerPreferences().contains(wo.getCN()))
           {
              String tech = techProfileList.stream().filter(p -> p.getCustomerPref().contains(wo.getCN())).findFirst().get().getName();
@@ -440,6 +394,18 @@
              if (!result.get(tech).contains(wo))
                 result.get(tech).add(wo);
           }
+          // Fill in FE work giving to tech with closest assigned job
+          else if (skill == SKILL.FE)
+          {
+             // Find closest assigned job to fill in FE work
+             String tech = MapUtils.findClosestAssignedTech(in2ToWOMap, fullMatrix.get(wo.getIN2()));
+             if (tech == null)
+                log.error("TECH IS NULL!");
+             itemsForSkill.forEach(i -> i.setTech(tech));
+             if (!result.get(tech).contains(wo))
+                result.get(tech).add(wo);
+          }
+          // Otherwise round robin for FA/SP work
           else
           {
              String tech = availableTechs.get(techIdx).getName();

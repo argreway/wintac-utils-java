@@ -1,0 +1,54 @@
+#map {
+    height: 500px; /* The height is 400 pixels */
+    width: 100%; /* The width is the width of the web page */
+}
+
+.ui-controlgroup-vertical {
+    width: 150px;
+}
+
+.ui-controlgroup.ui-controlgroup-vertical > button.ui-button,
+.ui-controlgroup.ui-controlgroup-vertical > .ui-controlgroup-label {
+    text-align: center;
+}
+
+.ui-controlgroup-horizontal .ui-spinner-input {
+    width: 20px;
+}
+
+#right-panel {
+    font-family: 'Roboto', 'sans-serif';
+    line-height: 30px;
+    padding-left: 10px;
+}
+
+#right-panel select, #right-panel input {
+    font-size: 15px;
+}
+
+#right-panel select {
+    width: 100%;
+}
+
+#right-panel i {
+    font-size: 12px;
+}
+
+#right-panel {
+    height: 500px;
+    width: 100%;
+    overflow-y: auto;
+}
+
+#progressbar {
+    margin-top: 20px;
+}
+
+.progress-label {
+    font-weight: bold;
+    text-shadow: 1px 1px 0 #fff;
+}
+
+.ui-dialog-titlebar-close {
+    display: none;
+}
