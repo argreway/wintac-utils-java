@@ -60,9 +60,6 @@
        List<WO> cosprings = woList.stream().filter(w -> w.getDEPT().equals("CO_SPRINGS")).collect(Collectors.toList());
        WorkLoadCalculator.calculateWorkLoad(cosprings);
 
-       // Serialize after we insert line item info - for remote debugging
-       SerializerUtils.serializeWOList(woList);
-
        try
        {
           buildRouteAndInsert(TechProfileConfiguration.getInstance().getDenTechToProfiles(), start, denver);
@@ -89,9 +86,9 @@
        List<WO> woList = filterRawWOList(rawList, confirmed.values().stream().flatMap(List::stream).collect(Collectors.toList()));
 
        // Geo Code if Needed
-       Map<String, GeoCodeData> geoCodeMap = MapUtils.geoCodeWOList(woList);
+       Map<String, GeoCodeData> geoCodeMap = MapUtils.geoCodeWOList(start, woList);
        Map<String, Map<String, Double>> distanceMatrix = MapUtils.calculateDistanceMatrix(geoCodeMap, geoCodeMap);
-       Map<String, GeoCodeData> geoCodeTechMap = MapUtils.geoCodeTechTerritory(profileMap);
+       Map<String, GeoCodeData> geoCodeTechMap = MapUtils.geoCodeTechTerritory(start, profileMap);
        Map<String, Map<String, Double>> territoryMatrix = MapUtils.calculateDistanceMatrix(geoCodeMap, geoCodeTechMap);
 
 
@@ -242,14 +239,16 @@
        int currentMinsLeft = MIN_PER_DAY;
 
        List<WO> dayToSchedule = Lists.newArrayList();
+       Set<String> currentIn2 = Sets.newHashSet();
 
        WO currentWO = originWO;
        while (currentWO != null)
        {
+          currentIn2.add(currentWO.getIN2());
           dayToSchedule.add(currentWO);
           currentMinsLeft -= currentWO.getMetaData().getWorkLoadMinutes(calendar.getTech());
           currentMinsLeft -= AppConfiguartion.getInstance().getDriveTime();
-          currentWO = getClosestWorkOrder(currentWO, calendar, in2ToWOMap, matrix, currentMinsLeft);
+          currentWO = getClosestWorkOrder(currentWO, currentIn2, calendar, in2ToWOMap, matrix, currentMinsLeft);
        }
 
        if (!calendar.scheduleFreeDay(dayToSchedule))
@@ -262,6 +261,7 @@
     }
 
     private WO getClosestWorkOrder(WO originWO,
+                                   Set<String> currentIn2,
                                    MonthlyCalendar calendar,
                                    Map<String, WO> in2ToWOMap,
                                    Map<String, Map<String, Double>> matrix,
@@ -272,13 +272,17 @@
 
        for (Map.Entry<String, Double> entry : matrix.get(originWO.getIN2()).entrySet())
        {
+          // Skip items in the current day already scheduled
+          if (currentIn2.contains(entry.getKey()) || entry.getKey().equals("0"))
+             continue;
+
           // Break we have scheduled the whole day
           if (currentMinsLeft < 60)
              break;
 
-          // Skip self and any WO farther than ~15 miles away
-          if (entry.getKey().equals(originWO.getIN2()) || entry.getKey().equals("0") || entry.getValue() > 15000)
-             continue;
+//           Skip self and any WO farther than ~15 miles away
+//          if (entry.getKey().equals(originWO.getIN2()) || entry.getKey().equals("0") || entry.getValue() > 25000)
+//             continue;
 
           // Longer than time left in day
           WO destWO = in2ToWOMap.get(entry.getKey());
@@ -296,9 +300,13 @@
           if (destWO.getMetaData().getItemStatHolderList(calendar.getTech()).get(0).getScheduledStart() != null)
              continue;
 
-          // Distance must be less than from shop to orig
+          // If distance is greater than 15 miles from shop take closest WO
           double shopToOrig = matrix.get("0").get(originWO.getIN2());
           double shopToDest = matrix.get("0").get(destWO.getIN2());
+          if (shopToOrig > 25000)
+             return destWO;
+
+          // If distance is less than 15 miles from shop start working back towards the shop
           if (shopToDest > shopToOrig)
              continue;
 
@@ -447,12 +455,13 @@
 
        if (full)
        {
-          List<WO> result = SerializerUtils.deSerializeWOList();
+          List<WO> result = SerializerUtils.deSerializeWOList(start);
           if (result == null)
              result = DAOFactory.getWipDao().getHistoryWOAndItems(start.toDateTime(), end.toDateTime());
+          SerializerUtils.serializeWOList(start, result);
           return result;
        }
-       return SerializerUtils.deSerializeWOList().stream().limit(2).collect(Collectors.toList());
+       return SerializerUtils.deSerializeWOList(start).stream().limit(2).collect(Collectors.toList());
     }
 
     protected void submitCalendarToGoogle(ScheduleCalendar calendar)

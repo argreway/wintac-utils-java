@@ -11,12 +11,12 @@
 
  import java.util.List;
 
-import com.sentryfire.model.Item;
-import com.sentryfire.persistance.DAOFactory;
-import org.influxdb.dto.QueryResult;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+ import com.sentryfire.model.Item;
+ import com.sentryfire.persistance.DAOFactory;
+ import org.influxdb.dto.QueryResult;
+ import org.joda.time.DateTime;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
 
  public class ITEMDao
  {
@@ -82,14 +82,15 @@ import org.slf4j.LoggerFactory;
     }
 
     public List<Item> getHistoryWOItemRecordsByIn2(DateTime start,
-                                            DateTime end,
-                                            String in2)
+                                                   DateTime end,
+                                                   String in2)
     {
        try
        {
-          String queryString = ALL_ITEM + " WHERE time >= " + start.getMillis() + "ms " +
-                               "AND time <= " + end.getMillis() + "ms " +
-                               "AND IN2 = '" + in2 + "'";
+          String queryString = ALL_ITEM + " WHERE IN2 = '" + in2 + "'";
+//          String queryString = ALL_ITEM + " WHERE time >= " + start.getMillis() + "ms " +
+//                               "AND time <= " + end.getMillis() + "ms " +
+//                               "AND IN2 = '" + in2 + "'";
 
           QueryResult queryResult = DAOFactory.getHistoryInfluxClient().query(queryString);
 

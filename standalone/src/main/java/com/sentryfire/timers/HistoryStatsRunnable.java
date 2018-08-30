@@ -1,6 +1,6 @@
  /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   * Author:    Tony Greway
-  * File:      StatsTimerTask.java
+  * File:      HistoryStatsRunnable.java
   * Created:   6/29/18
   *
   * Description:
@@ -9,14 +9,12 @@
 
  package com.sentryfire.timers;
 
- import java.util.TimerTask;
-
  import com.sentryfire.business.history.HistoryDataUtils;
- import com.sentryfire.business.utils.RealTimeDataUtils;
- import org.slf4j.Logger;
- import org.slf4j.LoggerFactory;
+import com.sentryfire.business.utils.RealTimeDataUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
- public class StatsTimerTask extends TimerTask
+ public class HistoryStatsRunnable implements Runnable
  {
     Logger log = LoggerFactory.getLogger(getClass());
 

@@ -339,7 +339,7 @@
           .database(dbName)
           .build();
 
-       pointList.stream().forEach(p -> batchPoints.point(p));
+       pointList.forEach(p -> batchPoints.point(p));
        influxDB.write(batchPoints);
     }
 

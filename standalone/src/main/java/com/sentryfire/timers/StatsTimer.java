@@ -10,9 +10,11 @@
  package com.sentryfire.timers;
 
 
- import java.util.Timer;
+ import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.joda.time.DateTime;
 import org.joda.time.MutableDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +28,7 @@ import org.slf4j.LoggerFactory;
     // 24 hours
     protected long interval = 86400000;
 
-    Timer timer = new Timer(true);
+    ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor();
 
     public void startTimer()
     {
@@ -38,22 +40,19 @@ import org.slf4j.LoggerFactory;
 
        long period = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
 
-       StatsTimerTask timerTask = new StatsTimerTask();
+       DateTime now = new DateTime();
+
+       long delay = next.getMillis() - now.getMillis();
+
+       HistoryStatsRunnable runnable = new HistoryStatsRunnable();
 //       timer.scheduleAtFixedRate(timerTask, delay, interval);
        // Every day at 3:00 AM
-       timer.schedule(timerTask, next.toDate(), period);
+       timer.scheduleAtFixedRate(runnable, delay, period, TimeUnit.MILLISECONDS);
 
        log.info("TimerTask started - connecting to DB.");
 
        // Start timer run every day at 3am
-       log.info("Timer to run at : " + next + ", interval: " + period);
-    }
-
-    public void cancelTimer()
-    {
-       log.info("Cancelling timer.");
-       timer.cancel();
-       log.info("Disposed of timer.");
+       log.info("Timer to run at : " + next + ", interval: " + period + " delay(ms): " + delay);
     }
 
  }

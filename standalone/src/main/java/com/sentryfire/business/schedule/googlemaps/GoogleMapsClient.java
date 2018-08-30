@@ -29,7 +29,6 @@
  import com.sentryfire.business.schedule.model.DistanceData;
  import com.sentryfire.config.ExternalConfiguartion;
  import com.sentryfire.model.WO;
- import com.sun.tools.javac.util.Pair;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -60,12 +59,6 @@
     }
 
     static boolean print = false;
-
-    public static List<Pair<String, String>> getLatLongForAddress()
-    {
-       List<Pair<String, String>> latLongList = Lists.newArrayList();
-       return latLongList;
-    }
 
     public static Map<String, Map<String, DistanceData>> getFullMeshMatrix(List<WO> woList)
     {

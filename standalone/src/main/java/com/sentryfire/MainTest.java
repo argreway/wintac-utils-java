@@ -10,10 +10,10 @@
  package com.sentryfire;
 
  import com.sentryfire.business.schedule.SchedulerBuilder;
-import com.sentryfire.persistance.DAOFactory;
-import org.joda.time.MutableDateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+ import com.sentryfire.persistance.DAOFactory;
+ import org.joda.time.MutableDateTime;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
 
  public class MainTest
  {
@@ -54,13 +54,15 @@ import org.slf4j.LoggerFactory;
 
           MutableDateTime start = new MutableDateTime();
           start.setYear(2018);
-          start.setMonthOfYear(8);
+          start.setMonthOfYear(9);
           start.setDayOfMonth(1);
           start.setHourOfDay(0);
           start.setMinuteOfHour(0);
           start.setSecondOfMinute(0);
+          start.setMillisOfSecond(0);
 
           SchedulerBuilder schedulerBuilder = new SchedulerBuilder();
+//          List<WO> wos = SchedulerBuilder.getWorkOrderList(start.toDateTime(), true);
           schedulerBuilder.buildAndInsertAllSchedules(start.toDateTime());
 
           DAOFactory.shutdown();

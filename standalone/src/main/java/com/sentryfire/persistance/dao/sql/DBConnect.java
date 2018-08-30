@@ -45,7 +45,6 @@
        {
           if (isConnected)
           {
-             log.info("Already connected.");
              return;
           }
 

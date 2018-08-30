@@ -9,6 +9,7 @@
 
  package com.sentryfire.business.utils;
 
+ import java.io.File;
  import java.io.FileInputStream;
  import java.io.FileNotFoundException;
  import java.io.FileOutputStream;
@@ -22,6 +23,7 @@
  import com.sentryfire.business.schedule.model.GeoCodeData;
  import com.sentryfire.config.AppConfiguartion;
  import com.sentryfire.model.WO;
+ import org.joda.time.DateTime;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -29,48 +31,63 @@
  {
     static Logger log = LoggerFactory.getLogger(SerializerUtils.class);
 
-    public static void serializeWOList(Object obj)
+    public static void serializeWOList(DateTime time,
+                                       Object obj)
     {
-       serializeObject(obj, "wo-data");
+       serializeObject(time, obj, "wo-data");
     }
 
-    public static List<WO> deSerializeWOList()
+    public static List<WO> deSerializeWOList(DateTime dateTime)
     {
-       return (List<WO>) deSerializeObject("wo-data");
+       return (List<WO>) deSerializeObject(dateTime, "wo-data");
     }
 
-    public static void serializeDistanceDataName(Object obj,
+    public static void serializeDistanceDataName(DateTime time,
+                                                 Object obj,
                                                  String name)
     {
-       serializeObject(obj, name + "-distance-data");
+       serializeObject(time, obj, name + "-distance-data");
     }
 
-    public static Map<String, Map<String, DistanceData>> deSerializeDistanceDataName(String name)
+    public static Map<String, Map<String, DistanceData>> deSerializeDistanceDataName(DateTime time,
+                                                                                     String name)
     {
        // Let's deserialize an Object
-       return (Map<String, Map<String, DistanceData>>) deSerializeObject(name + "-distance-data");
+       return (Map<String, Map<String, DistanceData>>) deSerializeObject(time, name + "-distance-data");
     }
 
-    public static void serializeGeoCodeMap(Object obj)
+    public static void serializeGeoCodeMap(DateTime time,
+                                           Object obj)
     {
-       serializeObject(obj, "geo-code");
+       serializeObject(time, obj, "geo-code");
     }
 
     public static Map<String, GeoCodeData> deSerializeGeoCodeMap()
     {
-       return (Map<String, GeoCodeData>) deSerializeObject("geo-code");
+       return (Map<String, GeoCodeData>) deSerializeObject(null, "geo-code");
     }
 
     /////////////
     // protected
     /////////////
-    protected static void serializeObject(Object obj,
+    protected static void serializeObject(DateTime time,
+                                          Object obj,
                                           String file)
     {
        // Let's serialize an Object
        try
        {
-          FileOutputStream fileOut = new FileOutputStream(AppConfiguartion.getInstance().getDataDirBase() + file + ".ser");
+          String fileLocation = AppConfiguartion.getInstance().getDataDirBase() + file + ".ser";
+          if (time != null)
+          {
+             String yearMonth = getMonthYearString(time);
+             fileLocation = AppConfiguartion.getInstance().getDataDirBase() + yearMonth + "/";
+             File dir = new File(fileLocation);
+             if (!dir.exists())
+                dir.mkdir();
+             fileLocation = AppConfiguartion.getInstance().getDataDirBase() + yearMonth + "/" + file + ".ser";
+          }
+          FileOutputStream fileOut = new FileOutputStream(fileLocation);
           ObjectOutputStream out = new ObjectOutputStream(fileOut);
           out.writeObject(obj);
           out.close();
@@ -88,12 +105,15 @@
     }
 
 
-    protected static Object deSerializeObject(String file)
+    protected static Object deSerializeObject(DateTime time,
+                                              String file)
     {
        Object result = null;
        try
        {
-          FileInputStream fileIn = new FileInputStream(AppConfiguartion.getInstance().getDataDirBase() + file + ".ser");
+          String yearMonth = getMonthYearString(time);
+          FileInputStream fileIn = new FileInputStream(AppConfiguartion.getInstance().getDataDirBase() +
+                                                       yearMonth + "/" + file + ".ser");
           ObjectInputStream in = new ObjectInputStream(fileIn);
           result = in.readObject();
           in.close();
@@ -109,6 +129,12 @@
           ex.printStackTrace();
        }
        return result;
+    }
+
+    protected static String getMonthYearString(DateTime dateTime)
+    {
+       return dateTime.getMonthOfYear() + "-" + dateTime.getYear();
+
     }
 
  }
