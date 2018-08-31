@@ -207,10 +207,24 @@ function closeDownload()
 // Button Updates AJAX
 $("#select-tech").on('change', function () {
 
+    let monthVal = $('#month-picker').val();
     techVal = $('#select-tech').val();
     // $.post("${pageContext.request.contextPath}/maps", {tech: techVal}).done(function (data) {
-    $.post("/maps", {tech: techVal}).done(function (data) {
+    $.post("/maps", {tech: techVal, month: monthVal}).done(function (data) {
         $('#select-date').html(data);
+    });
+});
+
+$('.monthpicker').MonthPicker();
+// $('.selector').MonthPicker({
+// 	OnBeforeMenuClose: function(event){
+$('#month-picker').MonthPicker('option', 'OnAfterChooseMonth', function () {
+// $("#month-picker").on('change', function () {
+
+    // $.post("${pageContext.request.contextPath}/maps", {tech: techVal}).done(function (data) {
+    let monthVal = $('#month-picker').val();
+    $.post("/maps", {month: monthVal}).done(function (data) {
+        $('#select-tech').html(data);
     });
 });
 
@@ -223,10 +237,11 @@ $("#loadTechRoute").on('click', function () {
     // });
     //dialog.dialog("open");
 
+    let monthVal = $('#month-picker').val();
     techVal = $('#select-tech').val();
     dateVal = $('#select-date').val();
     // $.post("${pageContext.request.contextPath}/maps", {tech: techVal, date: dateVal}).done(function (data) {
-    $.post("/maps", {tech: techVal, date: dateVal}).done(function (data) {
+    $.post("/maps", {month: monthVal, tech: techVal, date: dateVal}).done(function (data) {
 
         $('#map').empty();
         $('#right-panel').empty();
@@ -237,3 +252,7 @@ $("#loadTechRoute").on('click', function () {
             routeWaypoints(addrs);
     });
 });
+
+// $(document).ready(function () {
+//     Default functionality.
+// });

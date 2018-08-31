@@ -26,7 +26,6 @@
  import com.sentryfire.business.utils.SerializerUtils;
  import com.sentryfire.config.TechProfile;
  import com.sentryfire.model.WO;
- import org.joda.time.DateTime;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -39,8 +38,7 @@
     /**
      * Will update the map if needed with new addresses if needed
      */
-    public static Map<String, GeoCodeData> geoCodeWOList(DateTime start,
-                                                         List<WO> woList)
+    public static Map<String, GeoCodeData> geoCodeWOList(List<WO> woList)
     {
        Map<String, GeoCodeData> resultIn2ToGeo = Maps.newTreeMap();
 
@@ -72,12 +70,11 @@
           }
           resultIn2ToGeo.put(wo.getIN2(), data);
        }
-       SerializerUtils.serializeGeoCodeMap(start, geoCodeDataMap);
+       SerializerUtils.serializeGeoCodeMap(geoCodeDataMap);
        return resultIn2ToGeo;
     }
 
-    public static Map<String, GeoCodeData> geoCodeTechTerritory(DateTime start,
-                                                                Map<String, TechProfile> profileMap)
+    public static Map<String, GeoCodeData> geoCodeTechTerritory(Map<String, TechProfile> profileMap)
     {
        Map<String, GeoCodeData> resultMap = Maps.newTreeMap();
 
@@ -106,7 +103,7 @@
           geoCodeDataMap.put(tech.getName(), data);
           resultMap.put(tech.getName(), data);
        }
-       SerializerUtils.serializeGeoCodeMap(start, geoCodeDataMap);
+       SerializerUtils.serializeGeoCodeMap(geoCodeDataMap);
        return resultMap;
     }
 

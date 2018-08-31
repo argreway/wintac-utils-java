@@ -7,6 +7,9 @@
 <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="../js/MonthPicker.min.js"></script>
+<link href="../css/MonthPicker.min.css" rel="stylesheet" type="text/css" />
+
 
 <h3 style="text-align: center; color: darkred;">Tech Route Map</h3>
 
@@ -14,14 +17,11 @@
 
 <fieldset>
     <legend>Technician</legend>
+    Choose a Month:
+                  <input id="month-picker" class='monthpicker' type="text" />
     <div class="controlgroup">
         <select id="select-tech">
             <option>-Select Tech-</option>
-            <%
-                for (String tech : WebUtilities.getTechs())
-                { %>
-            <%="<option>" + tech + "</option>"%>
-            <%}%>
         </select>
         <select id="select-date">
             <option>-Select Calendar Date-</option>

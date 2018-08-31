@@ -28,6 +28,9 @@
  import com.sentryfire.business.schedule.model.GeoCodeData;
  import com.sentryfire.business.utils.SerializerUtils;
  import com.sentryfire.model.WO;
+ import org.joda.time.DateTime;
+ import org.joda.time.format.DateTimeFormat;
+ import org.joda.time.format.DateTimeFormatter;
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
@@ -36,9 +39,11 @@
  {
     private static final Logger log = LoggerFactory.getLogger(MapsController.class);
 
-    static Map<String, Map<String, List<WO>>> calMap = CalenderUtils.getCalMap();
+    static Map<String, Map<String, List<WO>>> calMap = null;
 
     static Map<String, GeoCodeData> geoCodeDataMap = SerializerUtils.deSerializeGeoCodeMap();
+
+    DateTimeFormatter dtf = DateTimeFormat.forPattern("MM/yyyy");
 
     /**
      * Simply selects the home view to render by returning its name.
@@ -66,14 +71,19 @@
        throws ServletException, IOException
     {
 
+       String monthVal = request.getParameter("month");
        String techID = request.getParameter("tech");
        String dateVal = request.getParameter("date");
 
-       if (techID != null && dateVal == null)
+       if (monthVal != null && techID == null && dateVal == null)
        {
-          handleGetTech(request, response, techID);
+          handleGetMonth(request, response, monthVal);
        }
-       else if (techID != null && dateVal != null)
+       else if (monthVal != null && techID != null && dateVal == null)
+       {
+          handleGetTech(request, response, monthVal, techID);
+       }
+       else if (monthVal != null && techID != null && dateVal != null)
        {
           handleGetAddress(response, techID, dateVal);
        }
@@ -106,6 +116,7 @@
 
     private void handleGetTech(HttpServletRequest request,
                                HttpServletResponse response,
+                               String month,
                                String techID) throws IOException
     {
        response.getWriter().println("");
@@ -117,15 +128,34 @@
        request.setAttribute("dateList", dateList);
 
        dateList.sort(new DateComparator());
+       response.getWriter().println("<option>ALL</option>");
        for (String date : dateList)
        {
           response.getWriter().println("<option>" + date + "</option>");
        }
-       response.getWriter().println("<option>ALL</option>");
+    }
+
+
+    private void handleGetMonth(HttpServletRequest request,
+                                HttpServletResponse response,
+                                String monthVal) throws IOException
+    {
+       DateTime start = dtf.parseDateTime(monthVal);
+       if (calMap == null)
+          calMap = CalenderUtils.getCalMap(start.toDateTime());
+
+       response.getWriter().println("<option>-Select Tech-</option>");
+       for (String tech : WebUtilities.getTechs())
+       {
+          response.getWriter().println("<option>" + tech + "</option>");
+       }
     }
 
     protected static Long getStartMillis(WO wo)
     {
+       if (wo == null || wo.getMetaData() == null || wo.getMetaData().getItemStatHolderList() == null ||
+           wo.getMetaData().getItemStatHolderList().isEmpty())
+          return 0L;
        return wo.getMetaData().getItemStatHolderList().get(0).getScheduledStart().getMillis();
     }
 

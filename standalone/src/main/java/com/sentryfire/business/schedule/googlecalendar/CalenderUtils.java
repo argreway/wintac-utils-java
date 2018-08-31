@@ -327,9 +327,9 @@
        return desc;
     }
 
-    public static Map<String, Map<String, List<WO>>> getCalMap()
+    public static Map<String, Map<String, List<WO>>> getCalMap(org.joda.time.DateTime dateTime)
     {
-       List<WO> raw = SchedulerBuilder.getWorkOrderList(new org.joda.time.DateTime(), true);
+       List<WO> raw = SchedulerBuilder.getWorkOrderList(dateTime, true);
 
        Map<String, WO> in2ToWO = raw.stream().collect(Collectors.toMap(WO::getIN2, Function.identity()));
 

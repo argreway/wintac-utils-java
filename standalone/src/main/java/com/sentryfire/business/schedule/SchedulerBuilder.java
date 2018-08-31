@@ -86,9 +86,9 @@
        List<WO> woList = filterRawWOList(rawList, confirmed.values().stream().flatMap(List::stream).collect(Collectors.toList()));
 
        // Geo Code if Needed
-       Map<String, GeoCodeData> geoCodeMap = MapUtils.geoCodeWOList(start, woList);
+       Map<String, GeoCodeData> geoCodeMap = MapUtils.geoCodeWOList(woList);
        Map<String, Map<String, Double>> distanceMatrix = MapUtils.calculateDistanceMatrix(geoCodeMap, geoCodeMap);
-       Map<String, GeoCodeData> geoCodeTechMap = MapUtils.geoCodeTechTerritory(start, profileMap);
+       Map<String, GeoCodeData> geoCodeTechMap = MapUtils.geoCodeTechTerritory(profileMap);
        Map<String, Map<String, Double>> territoryMatrix = MapUtils.calculateDistanceMatrix(geoCodeMap, geoCodeTechMap);
 
 
@@ -108,6 +108,7 @@
                                              final Map<String, Map<String, Double>> territoryMatrix,
                                              final Map<String, List<Event>> confirmedScheduled) throws Exception
     {
+
        ScheduleCalendar scheduleCalendar = new ScheduleCalendar(techToProfile.keySet(), calStart);
 
        // Update scheduled events (manually entered in google calendar or confirmed)
@@ -116,7 +117,7 @@
        List<WO> masterMonthList = Lists.newArrayList(rawList);
        Set<WO> completedList = Sets.newHashSet();
 
-       Map<String, List<WO>> distributedWOList = distributeWorkLoad(in2ToWOMap, masterMonthList, territoryMatrix, distanceMatrix, techToProfile.values());
+       Map<String, List<WO>> distributedWOList = distributeWorkLoad(in2ToWOMap, calStart, masterMonthList, territoryMatrix, distanceMatrix, techToProfile.values());
 
        for (MonthlyCalendar techCal : scheduleCalendar.getTechCalendars().values())
        {
@@ -319,17 +320,26 @@
      * Separate out work by Skills and GEO Location
      */
     protected Map<String, List<WO>> distributeWorkLoad(final Map<String, WO> in2ToWOMap,
+                                                       DateTime start,
                                                        List<WO> masterMonthList,
                                                        Map<String, Map<String, Double>> territoryMatrix,
                                                        Map<String, Map<String, Double>> fullMatrix,
                                                        Collection<TechProfile> techProfileList)
     {
+       Map<String, List<WO>> result = SerializerUtils.deSerializeDistributionMap(start);
+       if (result != null)
+          return result;
+
+       result = Maps.newTreeMap();
+
        // Sort tech list alphabetical for deterministic results
        List<TechProfile> sortedTechs = techProfileList.stream().sorted(
           (f1, f2) -> f1.getName().compareTo(f2.getName())).collect(Collectors.toList());
 
-       Map<String, List<WO>> result = Maps.newHashMap();
-       sortedTechs.forEach(t -> result.put(t.getName(), Lists.newArrayList()));
+       for (TechProfile techProfile : sortedTechs)
+       {
+          result.put(techProfile.getName(), Lists.newArrayList());
+       }
 
        // Broken Up By Skill Set
        Map<SKILL, List<WO>> skillMap = Maps.newHashMap();
@@ -351,6 +361,7 @@
        }
        distributeBySkill(sortedTechs, fullMatrix, territoryMatrix, result, in2ToWOMap, SKILL.FE, skillMap.get(SKILL.FE));
 
+       SerializerUtils.serializeDistributionMap(start, result);
        return result;
     }
 

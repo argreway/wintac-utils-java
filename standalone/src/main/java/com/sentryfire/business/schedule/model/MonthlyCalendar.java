@@ -317,8 +317,9 @@
     {
        MutableDateTime current = new MutableDateTime(start);
        current.setDayOfMonth(1);
+       int lastDay = current.dayOfMonth().getMaximumValue();
 
-       for (int i = 1; i <= current.dayOfMonth().getMaximumValue(); i++)
+       for (int i = 1; i <= lastDay; i++)
        {
           boolean workDay = true;
           if (current.getDayOfWeek() == DateTimeConstants.SATURDAY || current.getDayOfWeek() == DateTimeConstants.SUNDAY)

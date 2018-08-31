@@ -56,10 +56,20 @@
        return (Map<String, Map<String, DistanceData>>) deSerializeObject(time, name + "-distance-data");
     }
 
-    public static void serializeGeoCodeMap(DateTime time,
-                                           Object obj)
+    public static void serializeDistributionMap(DateTime time,
+                                                Map<String, List<WO>> distMap)
     {
-       serializeObject(time, obj, "geo-code");
+       serializeObject(time, distMap, "distribution-map");
+    }
+
+    public static Map<String, List<WO>> deSerializeDistributionMap(DateTime time)
+    {
+       return (Map<String, List<WO>>) deSerializeObject(time, "distribution-map");
+    }
+
+    public static void serializeGeoCodeMap(Object obj)
+    {
+       serializeObject(null, obj, "geo-code");
     }
 
     public static Map<String, GeoCodeData> deSerializeGeoCodeMap()
@@ -111,9 +121,13 @@
        Object result = null;
        try
        {
-          String yearMonth = getMonthYearString(time);
-          FileInputStream fileIn = new FileInputStream(AppConfiguartion.getInstance().getDataDirBase() +
-                                                       yearMonth + "/" + file + ".ser");
+          String fileLocation = AppConfiguartion.getInstance().getDataDirBase() + "/" + file + ".ser";
+          if (time != null)
+          {
+             String yearMonth = getMonthYearString(time);
+             fileLocation = AppConfiguartion.getInstance().getDataDirBase() + yearMonth + "/" + file + ".ser";
+          }
+          FileInputStream fileIn = new FileInputStream(fileLocation);
           ObjectInputStream in = new ObjectInputStream(fileIn);
           result = in.readObject();
           in.close();
