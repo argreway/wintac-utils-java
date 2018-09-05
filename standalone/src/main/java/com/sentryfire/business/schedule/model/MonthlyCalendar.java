@@ -163,10 +163,13 @@
        {
           // Every other day
           int dayNumber = counterIndex;
-          if (counterIndex < counterMax)
+          if (counterIndex < freeDays.size())
              counterIndex++;
           else
+          {
              counterIndex = 0;
+             dayNumber = 0;
+          }
 
           locationDaysToTry.add(freeDays.get(dayNumber));
        }

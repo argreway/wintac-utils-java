@@ -88,18 +88,16 @@
           if (addr == null || addr.isEmpty())
              continue;
 
-          GeoCodeData data = geoCodeDataMap.get(tech.getName());
-          if (data == null)
+          // Always look up tech territories in case they change
+          GeocodingResult result = GoogleMapsClient.geocodeAddress(addr);
+          if (result == null)
           {
-             GeocodingResult result = GoogleMapsClient.geocodeAddress(addr);
-             if (result == null)
-             {
-                log.error("Failed to get geometry for tech [" + tech.getName() + "] address [" + addr + "]");
-                continue;
-             }
-             data = new GeoCodeData(result, result.geometry.location.lat, result.geometry.location.lng,
-                                    null, null, null, null, null);
+             log.error("Failed to get geometry for tech [" + tech.getName() + "] address [" + addr + "]");
+             continue;
           }
+
+          GeoCodeData data = new GeoCodeData(result, result.geometry.location.lat, result.geometry.location.lng,
+                                             null, null, null, null, null);
           geoCodeDataMap.put(tech.getName(), data);
           resultMap.put(tech.getName(), data);
        }
@@ -201,10 +199,11 @@
        return result;
     }
 
-    public static String findClosestAssignedTech(Map<String, WO> in2ToWO,
-                                                 Map<String, Double> row)
+    public static String getClosestAssignedTech(Map<String, List<WO>> currentDist,
+                                                Map<String, WO> in2ToWO,
+                                                Map<String, Double> row)
     {
-       WO result = null;
+       List<WO> result = Lists.newLinkedList();
 
        int i = 0;
        for (String in2 : row.keySet())
@@ -215,15 +214,50 @@
           if (temp != null && temp.getMetaData().getTechsOnSite() != null &&
               temp.getMetaData().getTechsOnSite().size() > 0)
           {
-             result = temp;
-             break;
+             result.add(temp);
           }
        }
 
-       if (result == null)
-          return null;
+       List<String> techsInOrder = result.stream().map(w -> w.getMetaData().getTechsOnSite().iterator().next()).collect(Collectors.toList());
+       // Could return the first tech in this list for strictly closest
 
-       return result.getMetaData().getTechsOnSite().iterator().next();
+       // Going to try and even the load better here
+       Map<String, Integer> techWorkLoad = Maps.newTreeMap();
+       for (Map.Entry<String, List<WO>> entry : currentDist.entrySet())
+       {
+          if (entry.getValue().size() > 0)
+             techWorkLoad.put(entry.getKey(), entry.getValue().size());
+       }
+
+       // Most work to least
+//       techWorkLoad = techWorkLoad.entrySet().stream().sorted(Collections.reverseOrder(Map.Entry.comparingByValue())).
+       // Least work to greatest
+       techWorkLoad = techWorkLoad.entrySet().stream().sorted(Map.Entry.comparingByValue()).
+          collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e2, LinkedHashMap::new));
+
+       int bottomHalf = techWorkLoad.size() / 2;
+
+       for (String tech : techsInOrder)
+       {
+          int count = 0;
+          // If we got the most heavily loaded tech move on to the next available
+          Map.Entry<String, Integer> prevTech = null;
+          for (Map.Entry<String, Integer> entry : techWorkLoad.entrySet())
+          {
+             // Give to tech if they are heavily underloaded
+             if (prevTech != null && (entry.getValue() - prevTech.getValue()) >= 5)
+                return prevTech.getKey();
+             prevTech = entry;
+
+             if (count > bottomHalf)
+                break;
+             if (tech.equals(entry.getKey()))
+                return tech;
+             count++;
+          }
+       }
+
+       return null;
     }
 
     //////////////

@@ -19,6 +19,7 @@
 
  import javax.swing.table.DefaultTableModel;
 
+ import com.sentryfire.model.WO;
  import org.joda.time.DateTime;
  import org.joda.time.format.DateTimeFormat;
  import org.joda.time.format.DateTimeFormatter;
@@ -237,7 +238,7 @@
                              "(((((RCV.FRM = " + rcvForm + " ) AND (NOT((RCV.JSTAT = '*' )) OR (RCV.JSTAT IS NULL ))) " +
                              "AND (RCV.COUNTER = RCVT.RCVPK )) " +
                              "AND (RCVT.DATE BETWEEN {d '" + start.toString("yyyy'-'MM'-'dd") + "'} AND {d '" + end.toString("yyyy'-'MM'-'dd") + "'} ) ) " +
-                             "AND ((RCV.\"IN\" = RCVN.\"IN\" ) AND (RCV.CN = RCVN.CN ))) " + "AND (CST.CN = RCV.CN ))";
+                             "AND ((RCV.\"IN\" = RCVN.\"IN\" ) AND (RCV.CN = RCVN.CN ))) " + "AND (CST.CN = RCV.CN )) AND RCV.AUTOWIP = 0";
 
        return getDataTable(selectString);
     }
@@ -273,6 +274,26 @@
        return getDataTable(selectString);
     }
 
+    public boolean updateWOTech(String tech,
+                                WO wo)
+    {
+       boolean success = false;
+
+       try
+       {
+          String updateRCVString = "update RCV set MISC1 = '" + tech + "' where IN2 = '" + wo.getIN2() + "'";
+          updateTable(updateRCVString);
+          String updateRCVTString = "update RCVT set TECH = '" + tech + "' where RCVPK = '" + wo.getCOUNTER() + "'";
+          updateTable(updateRCVTString);
+          success = true;
+       }
+       catch (Exception e)
+       {
+          log.error("Failed to update " + wo.getIN2() + " " + wo.getRCVNKey() + " " + tech);
+       }
+       return success;
+    }
+
     public DefaultTableModel getDataTable(String selectString)
     {
        try
@@ -292,6 +313,22 @@
           log.error("Failed to execute " + selectString, e);
        }
        return null;
+    }
+
+    private void updateTable(String updateString)
+    {
+       try
+       {
+          log.debug("Update String: " + updateString);
+          Statement stmt = cnn.createStatement();
+          boolean pass = stmt.execute(updateString);
+
+          log.debug("Result: " + pass);
+       }
+       catch (Exception e)
+       {
+          log.error("Failed to execute " + updateString, e);
+       }
     }
 
     public DefaultTableModel getWorkOrdersByTime(DateTime start,

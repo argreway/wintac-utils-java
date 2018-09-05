@@ -142,7 +142,9 @@
     {
        DateTime start = dtf.parseDateTime(monthVal);
        if (calMap == null)
+       {
           calMap = CalenderUtils.getCalMap(start.toDateTime());
+       }
 
        response.getWriter().println("<option>-Select Tech-</option>");
        for (String tech : WebUtilities.getTechs())

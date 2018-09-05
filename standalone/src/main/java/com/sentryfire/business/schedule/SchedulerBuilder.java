@@ -54,17 +54,24 @@
        List<WO> woList = getWorkOrderList(start, true);
 
        List<WO> denver = woList.stream().filter(w -> w.getDEPT().equals("DENVER")).collect(Collectors.toList());
-       WorkLoadCalculator.calculateWorkLoad(denver);
+       ItemMetaDataUtils.calculateWorkLoad(denver);
        List<WO> greeley = woList.stream().filter(w -> w.getDEPT().equals("GREELEY")).collect(Collectors.toList());
-       WorkLoadCalculator.calculateWorkLoad(greeley);
+       ItemMetaDataUtils.calculateWorkLoad(greeley);
        List<WO> cosprings = woList.stream().filter(w -> w.getDEPT().equals("CO_SPRINGS")).collect(Collectors.toList());
-       WorkLoadCalculator.calculateWorkLoad(cosprings);
+       ItemMetaDataUtils.calculateWorkLoad(cosprings);
+
+       List<WO> emptyMetaData = woList.stream().filter(w -> w.getMetaData().getItemStatHolderList().size() == 0).collect(Collectors.toList());
+       if (emptyMetaData.size() > 0)
+          log.error("Found the following WO with missing meta data: " + emptyMetaData);
 
        try
        {
           buildRouteAndInsert(TechProfileConfiguration.getInstance().getDenTechToProfiles(), start, denver);
 //       buildRouteAndInsert(TechProfileConfiguration.getInstance().getGreTechToProfiles(), start, greeley);
 //       buildRouteAndInsert(TechProfileConfiguration.getInstance().getFipTechToProfiles(), start, cosprings);
+
+          // Serialize after we have inserted the metadata info
+          SerializerUtils.serializeWOList(start, woList);
        }
        catch (Exception e)
        {
@@ -83,6 +90,7 @@
        Map<String, List<Event>> confirmed = getConfirmedAndClearUnconfirmed();
 
        // Filter out raw list
+       List<WO> unassignedList = rawList.stream().filter(this::isMonitoringMonthlyOnly).collect(Collectors.toList());
        List<WO> woList = filterRawWOList(rawList, confirmed.values().stream().flatMap(List::stream).collect(Collectors.toList()));
 
        // Geo Code if Needed
@@ -92,7 +100,8 @@
        Map<String, Map<String, Double>> territoryMatrix = MapUtils.calculateDistanceMatrix(geoCodeMap, geoCodeTechMap);
 
 
-       ScheduleCalendar calendar = buildSchedule(profileMap, woList, start, in2ToWOList, distanceMatrix, territoryMatrix, confirmed);
+       ScheduleCalendar calendar = buildSchedule(profileMap, woList, unassignedList, start, in2ToWOList, distanceMatrix, territoryMatrix, confirmed);
+
        submitCalendarToGoogle(calendar);
     }
 
@@ -102,6 +111,7 @@
 
     protected ScheduleCalendar buildSchedule(final Map<String, TechProfile> techToProfile,
                                              final List<WO> rawList,
+                                             final List<WO> unassignedList,
                                              final org.joda.time.DateTime calStart,
                                              final Map<String, WO> in2ToWOMap,
                                              final Map<String, Map<String, Double>> distanceMatrix,
@@ -123,7 +133,7 @@
        {
           String tech = techCal.getTech();
 
-          List<WO> unScheduledList = distributedWOList.get(tech);
+          List<WO> unScheduledList = Lists.newArrayList(distributedWOList.get(tech));
           List<WO> completedWO = scheduleTechForMonth(techCal, distanceMatrix, distributedWOList.get(tech), in2ToWOMap);
 
           masterMonthList.removeAll(completedWO);
@@ -135,7 +145,16 @@
 
        log.info("TOTAL: Completed WO [" + completedList.size() + "] - not Scheduled [" + masterMonthList.size() + "]");
        log.error("Unscheduled WO: ");
-       masterMonthList.forEach(w -> log.error("\t " + w));
+       masterMonthList.forEach(
+          w -> log.error("\t " + w.getIN2() + " " + w.getNAME() + " " + w.getMetaData()));
+
+       // TODO add this when we are ready?? when should we do it
+       updateTechsInDB(distributedWOList);
+       distributedWOList.clear();
+       unassignedList.addAll(masterMonthList);
+       distributedWOList.put("", unassignedList);
+       updateTechsInDB(distributedWOList);
+
        return scheduleCalendar;
     }
 
@@ -215,16 +234,33 @@
        shopDistance.keySet().retainAll(unScheduledIn2);
 
        unScheduled = shopDistance.keySet().stream().map(in2ToWOMap::get).collect(Collectors.toList());
+       workingList = shopDistance.keySet().stream().map(in2ToWOMap::get).collect(Collectors.toList());
 
-       while (unScheduled.size() > 0)
+       while (workingList.size() > 0)
        {
-          workingList = scheduleDayFromOrigin(unScheduled.get(0), calendar, in2ToWOMap, matrix);
-          if (workingList == null)
+          List<WO> scheduledList = scheduleDayFromOrigin(unScheduled.get(0), calendar, in2ToWOMap, matrix);
+          if (scheduledList == null)
           {
+             workingList.remove(unScheduled.get(0));
              break;
           }
-          unScheduled.removeAll(workingList);
-          completedWOList.addAll(workingList);
+          workingList.removeAll(scheduledList);
+          unScheduled.removeAll(scheduledList);
+          completedWOList.addAll(scheduledList);
+       }
+
+       // TODO make this place the WO near other ones
+       // Try to insert any uncompleted WO's anywhere in the schedule
+       workingList.clear();
+       workingList.addAll(unScheduled);
+       for (WO wo : workingList)
+       {
+          EventTask task = calendar.scheduleWorkOrder(wo);
+          if (task != null)
+          {
+             unScheduled.remove(wo);
+             completedWOList.add(wo);
+          }
        }
 
        log.info(calendar.printCalendar(false));
@@ -377,6 +413,7 @@
           return;
 
        List<TechProfile> availableTechs = techProfileList.stream().filter(p -> p.getScheduleSkills().contains(skill)).collect(Collectors.toList());
+       List<String> availableTechStringList = availableTechs.stream().map(TechProfile::getName).collect(Collectors.toList());
        if (availableTechs.size() == 0)
        {
           log.error("Skill required for WO but not available [" + skill + "]");
@@ -393,10 +430,22 @@
           //  Assign WO by territory
           if (shouldAssignWO(wo, skill))
           {
-             Map.Entry<String, Double> techEntry = territoryMatrix.get(wo.getIN2()).entrySet().iterator().next();
-             String tech = techEntry.getKey();
+             Map<String, Double> techList = territoryMatrix.get(wo.getIN2());
+
+             String tech = null;
+             for (Map.Entry<String, Double> entry : techList.entrySet())
+             {
+                if (availableTechStringList.contains(entry.getKey()))
+                {
+                   tech = entry.getKey();
+                   break;
+                }
+             }
              log.info("Assigning " + tech + " to " + wo.getIN2());
-             itemsForSkill.forEach(i -> i.setTech(tech));
+             for (ItemStatHolder ih : itemsForSkill)
+             {
+                ih.setTech(tech);
+             }
              result.get(tech).add(wo);
           }
           // Give to tech on site if assignment not required
@@ -417,9 +466,10 @@
           else if (skill == SKILL.FE)
           {
              // Find closest assigned job to fill in FE work
-             String tech = MapUtils.findClosestAssignedTech(in2ToWOMap, fullMatrix.get(wo.getIN2()));
+             String tech = MapUtils.getClosestAssignedTech(result, in2ToWOMap, fullMatrix.get(wo.getIN2()));
              if (tech == null)
                 log.error("TECH IS NULL!");
+
              itemsForSkill.forEach(i -> i.setTech(tech));
              if (!result.get(tech).contains(wo))
                 result.get(tech).add(wo);
@@ -441,6 +491,22 @@
     // Helpers
     /////////////////////////////////////
 
+    protected void updateTechsInDB(Map<String, List<WO>> distributionMap)
+    {
+       log.info("BEGIN: Writing techs in to the db.");
+       for (Map.Entry<String, List<WO>> entry : distributionMap.entrySet())
+       {
+          String tech = entry.getKey();
+          log.info("Updating [" + entry.getValue().size() + "] WOs for tech [" + tech + "].");
+          for (WO wo : entry.getValue())
+          {
+             DAOFactory.sqlDB().updateWOTech(tech, wo);
+          }
+       }
+
+       log.info("END: Writing techs in to the db.");
+    }
+
     protected static boolean shouldAssignWO(WO wo,
                                             SKILL skill)
     {
@@ -451,7 +517,7 @@
        {
           long numTags = wo.getMetaData().getItemStatHolderList().stream().
              filter(i -> "TAG".equals(i.getItemCode())).mapToInt(ItemStatHolder::getCount).sum();
-          if (numTags >= 15)
+          if (numTags >= 10)
              return true;
        }
        return false;
@@ -469,7 +535,6 @@
           List<WO> result = SerializerUtils.deSerializeWOList(start);
           if (result == null)
              result = DAOFactory.getWipDao().getHistoryWOAndItems(start.toDateTime(), end.toDateTime());
-          SerializerUtils.serializeWOList(start, result);
           return result;
        }
        return SerializerUtils.deSerializeWOList(start).stream().limit(2).collect(Collectors.toList());
@@ -527,6 +592,11 @@
     {
        if (wo != null)
        {
+          if (wo.getMetaData().getWorkLoadMinutes() <= 0)
+          {
+             log.warn("WO [" + wo.getIN2() + "] has workload time <= 0 " + wo.getMetaData());
+             return true;
+          }
           for (ItemStatHolder item : wo.getMetaData().getItemStatHolderList())
           {
              if (item.getItemCode().equals("MONITORING") || item.getItemCode().equals("SC")

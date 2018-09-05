@@ -297,6 +297,8 @@
           }
        }
 
+       if(measurements.size() == 0)
+          log.info("TG: found");
        // Bulk write out the stats
        write(measurements);
        clearStampList();

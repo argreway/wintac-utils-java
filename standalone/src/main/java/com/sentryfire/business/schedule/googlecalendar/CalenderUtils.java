@@ -330,6 +330,7 @@
     public static Map<String, Map<String, List<WO>>> getCalMap(org.joda.time.DateTime dateTime)
     {
        List<WO> raw = SchedulerBuilder.getWorkOrderList(dateTime, true);
+//       ItemMetaDataUtils.insertItemMeta(raw);
 
        Map<String, WO> in2ToWO = raw.stream().collect(Collectors.toMap(WO::getIN2, Function.identity()));
 

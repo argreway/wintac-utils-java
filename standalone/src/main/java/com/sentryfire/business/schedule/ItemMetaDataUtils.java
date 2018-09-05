@@ -1,6 +1,6 @@
  /*=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   * Author:    Tony Greway
-  * File:      WorkLoadCalculator.java
+  * File:      ItemMetaDataUtils.java
   * Created:   8/9/18
   *
   * Description:
@@ -26,11 +26,22 @@
  import org.slf4j.Logger;
  import org.slf4j.LoggerFactory;
 
- public class WorkLoadCalculator
+ public class ItemMetaDataUtils
  {
-    static Logger log = LoggerFactory.getLogger(WorkLoadCalculator.class);
+    static Logger log = LoggerFactory.getLogger(ItemMetaDataUtils.class);
 
     public static void calculateWorkLoad(List<WO> list)
+    {
+       updateItemMeta(list, true);
+    }
+
+    public static void insertItemMeta(List<WO> list)
+    {
+       updateItemMeta(list, false);
+    }
+
+    public static void updateItemMeta(List<WO> list,
+                                      boolean printSummary)
     {
        Map<String, Integer> itemTimes = AppConfiguartion.getInstance().getItemTimeMinsMap();
        Map<String, SKILL> itemSkill = AppConfiguartion.getInstance().getItemToSkill();
@@ -40,6 +51,13 @@
 
        for (WO wo : list)
        {
+          // If we are reading this from a serialized object we already populated these so don't overwrite them.
+          if (wo.getMetaData() != null && wo.getMetaData().getItemStatHolderList() != null && wo.getMetaData().getItemStatHolderList().size() > 0)
+          {
+             log.info("WO's read from disk will not update metadata.");
+             return;
+          }
+
           WOMeta meta = new WOMeta();
           wo.setMetaData(meta);
           for (Item item : wo.getLineItems())
@@ -70,6 +88,13 @@
           }
        }
 
+       if (printSummary)
+          printSummaryInfo(list, unknown);
+    }
+
+    private static void printSummaryInfo(List<WO> list,
+                                         Set<String> unknown)
+    {
        log.error("Unknown item times: " + unknown);
        List<ItemStatHolder> allItemStats = list.stream().map(WO::getMetaData).map(WOMeta::getItemStatHolderList).flatMap(Collection::stream).collect(Collectors.toList());
 
@@ -90,6 +115,7 @@
        log.info("Sum (Week): " + subTotal / 60.0 / 40.0);
        log.info("Men (Work Months): " + subTotal / 60.0 / 40.0 / 4.0);
     }
+
 
     protected static void printItemTotals(List<ItemStatHolder> allItemHolders)
     {
