@@ -90,7 +90,7 @@
        Map<String, List<Event>> confirmed = getConfirmedAndClearUnconfirmed();
 
        // Filter out raw list
-       List<WO> unassignedList = rawList.stream().filter(this::isMonitoringMonthlyOnly).collect(Collectors.toList());
+       List<WO> unassignedList = rawList.stream().filter(this::shouldUnassignWO).collect(Collectors.toList());
        List<WO> woList = filterRawWOList(rawList, confirmed.values().stream().flatMap(List::stream).collect(Collectors.toList()));
 
        // Geo Code if Needed
@@ -102,7 +102,10 @@
 
        ScheduleCalendar calendar = buildSchedule(profileMap, woList, unassignedList, start, in2ToWOList, distanceMatrix, territoryMatrix, confirmed);
 
-       submitCalendarToGoogle(calendar);
+       if (AppConfiguartion.getInstance().getUpdateTechsInDB())
+       {
+          submitCalendarToGoogle(calendar);
+       }
     }
 
     ////////////////
@@ -148,12 +151,14 @@
        masterMonthList.forEach(
           w -> log.error("\t " + w.getIN2() + " " + w.getNAME() + " " + w.getMetaData()));
 
-       // TODO add this when we are ready?? when should we do it
-       updateTechsInDB(distributedWOList);
-       distributedWOList.clear();
-       unassignedList.addAll(masterMonthList);
-       distributedWOList.put("", unassignedList);
-       updateTechsInDB(distributedWOList);
+       if (AppConfiguartion.getInstance().getUpdateTechsInDB())
+       {
+          updateTechsInDB(distributedWOList);
+          distributedWOList.clear();
+          unassignedList.addAll(masterMonthList);
+          distributedWOList.put("", unassignedList);
+          updateTechsInDB(distributedWOList);
+       }
 
        return scheduleCalendar;
     }
@@ -567,8 +572,13 @@
                 else
                    removeEvents.add(e);
              }
-             CalendarManager.getInstance().deleteEventList(calName, removeEvents);
-             log.info("Removed [" + removeEvents.size() + "] events from [" + calName + "].");
+
+             // Delete if we are doing an official run
+             if (AppConfiguartion.getInstance().getUpdateTechsInDB())
+             {
+                CalendarManager.getInstance().deleteEventList(calName, removeEvents);
+                log.info("Removed [" + removeEvents.size() + "] events from [" + calName + "].");
+             }
           }
           catch (Exception e)
           {
@@ -585,13 +595,16 @@
        List<String> confirmedJobNumbers = Lists.newArrayList();
        confirmedEvents.forEach(e -> confirmedJobNumbers.add(CalenderUtils.getIN2FromEvent(e)));
        List<WO> filtered = raw.stream().filter(w -> !confirmedJobNumbers.contains(w.getIN2())).collect(Collectors.toList());
-       return filtered.stream().filter(w -> !isMonitoringMonthlyOnly(w)).collect(Collectors.toList());
+       return filtered.stream().filter(w -> !shouldUnassignWO(w)).collect(Collectors.toList());
     }
 
-    protected boolean isMonitoringMonthlyOnly(WO wo)
+    protected boolean shouldUnassignWO(WO wo)
     {
        if (wo != null)
        {
+          // This is for CFP etc... we don't want these to be scheduled rather bubble them up to the top
+          if (AppConfiguartion.getInstance().getUnassignCNList().contains(wo.getCN()))
+             return true;
           if (wo.getMetaData().getWorkLoadMinutes() <= 0)
           {
              log.warn("WO [" + wo.getIN2() + "] has workload time <= 0 " + wo.getMetaData());

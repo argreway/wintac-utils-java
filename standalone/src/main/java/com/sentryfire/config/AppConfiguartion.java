@@ -45,13 +45,16 @@
     protected static final String ITEM_SKILL = "itemSkill";
     protected static final String EARLY_ITEMS = "earlyItems";
 
+    protected static final String UNASSIGN_CN = "unassignCN";
+    protected static final String UPDATE_TECHS_IN_DB = "updateTechsInDB";
+
     protected static final String DRIVE_TIME = "driveTime";
 
     protected static final String LUNCH_TIME = "lunchTime";
     protected static final String LUNCH_WINDOW_BEGIN_HR = "lunchWindowBeginHr";
     protected static final String LUNCH_WINDOW_END_HR = "lunchWindowEndHr";
 
-    protected static final String EMPTY_TIME_SLOT_MINIMUM_MIN = "emtpyTimeSlotMinimumMin";
+    protected static final String EMPTY_TIME_SLOT_MINIMUM_MIN = "emptyTimeSlotMinimumMin";
 
     protected static final String BEGIN_TIME_MIN = "beginTimeMin";
     protected static final String BEGIN_TIME_HR = "beginTimeHr";
@@ -155,6 +158,17 @@
        return Integer.parseInt(val);
     }
 
+    public List<String> getUnassignCNList()
+    {
+       return getStringList(UNASSIGN_CN, Lists.newArrayList());
+    }
+
+
+    public Boolean getUpdateTechsInDB()
+    {
+       String val = getString(UPDATE_TECHS_IN_DB, "false");
+       return Boolean.parseBoolean(val);
+    }
 
     public Integer getCalReminderMin()
     {
@@ -180,7 +194,7 @@
 
                                         "Tony Greway\n" +
                                         "Sentry Fire & Safety\n" +
-                                        "info@com.sentryfire.net\n" +
+                                        "scheduler@sentryfire.com\n" +
                                         "(303)-294-0708\n\n" +
                                         "-------- Customer Location Info ---------\n\n");
 
