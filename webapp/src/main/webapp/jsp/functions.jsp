@@ -18,7 +18,7 @@
     {
         String begingDate = request.getParameter("beginDate");
         String endDate = request.getParameter("endDate");
-        webUtilities.buildSchedule(begingDate, endDate);
+        webUtilities.buildSchedule(begingDate, endDate, null);
     }
     else if (request.getParameter("delete-schedule") != null)
     {

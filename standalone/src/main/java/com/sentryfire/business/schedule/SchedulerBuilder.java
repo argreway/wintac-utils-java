@@ -49,9 +49,15 @@
 
     protected static final int MIN_PER_DAY = 8 * 60;
 
-    public void buildAndInsertAllSchedules(org.joda.time.DateTime start)
+    public void buildAndInsertAllSchedules(org.joda.time.DateTime start,
+                                           String techRebuild)
     {
        List<WO> woList = getWorkOrderList(start, true);
+
+       // Clear the calendar start times if we are rebuilding
+       if (techRebuild != null)
+          woList.forEach(w -> w.getMetaData().getItemStatHolderList().forEach(i -> i.setScheduledStart(null)));
+
 
        List<WO> denver = woList.stream().filter(w -> w.getDEPT().equals("DENVER")).collect(Collectors.toList());
        ItemMetaDataUtils.calculateWorkLoad(denver);
@@ -66,7 +72,7 @@
 
        try
        {
-          buildRouteAndInsert(TechProfileConfiguration.getInstance().getDenTechToProfiles(), start, denver);
+          buildRouteAndInsert(TechProfileConfiguration.getInstance().getDenTechToProfiles(), start, denver, techRebuild);
 //       buildRouteAndInsert(TechProfileConfiguration.getInstance().getGreTechToProfiles(), start, greeley);
 //       buildRouteAndInsert(TechProfileConfiguration.getInstance().getFipTechToProfiles(), start, cosprings);
 
@@ -82,12 +88,13 @@
 
     private void buildRouteAndInsert(Map<String, TechProfile> profileMap,
                                      DateTime start,
-                                     List<WO> rawList) throws Exception
+                                     List<WO> rawList,
+                                     String techRebuild) throws Exception
     {
        Map<String, WO> in2ToWOList = rawList.stream().collect(Collectors.toMap(WO::getIN2, Function.identity()));
 
        // Remove events that need to be rescheduled
-       Map<String, List<Event>> confirmed = getConfirmedAndClearUnconfirmed();
+       Map<String, List<Event>> confirmed = getConfirmedAndClearUnconfirmed(techRebuild);
 
        // Filter out raw list
        List<WO> unassignedList = rawList.stream().filter(this::shouldUnassignWO).collect(Collectors.toList());
@@ -100,9 +107,9 @@
        Map<String, Map<String, Double>> territoryMatrix = MapUtils.calculateDistanceMatrix(geoCodeMap, geoCodeTechMap);
 
 
-       ScheduleCalendar calendar = buildSchedule(profileMap, woList, unassignedList, start, in2ToWOList, distanceMatrix, territoryMatrix, confirmed);
+       ScheduleCalendar calendar = buildSchedule(profileMap, woList, unassignedList, start, in2ToWOList, distanceMatrix, territoryMatrix, confirmed, techRebuild);
 
-       if (AppConfiguartion.getInstance().getUpdateTechsInDB())
+       if (AppConfiguartion.getInstance().getUpdateTechsInDB() || techRebuild != null)
        {
           submitCalendarToGoogle(calendar);
        }
@@ -119,10 +126,15 @@
                                              final Map<String, WO> in2ToWOMap,
                                              final Map<String, Map<String, Double>> distanceMatrix,
                                              final Map<String, Map<String, Double>> territoryMatrix,
-                                             final Map<String, List<Event>> confirmedScheduled) throws Exception
+                                             final Map<String, List<Event>> confirmedScheduled,
+                                             final String techRebuild) throws Exception
     {
 
-       ScheduleCalendar scheduleCalendar = new ScheduleCalendar(techToProfile.keySet(), calStart);
+       Set<String> techs = techToProfile.keySet();
+       if (techRebuild != null)
+          techs = Sets.newHashSet(techRebuild);
+
+       ScheduleCalendar scheduleCalendar = new ScheduleCalendar(techs, calStart);
 
        // Update scheduled events (manually entered in google calendar or confirmed)
        scheduleCalendar.insertScheduledEvents(confirmedScheduled, in2ToWOMap);
@@ -290,7 +302,8 @@
           dayToSchedule.add(currentWO);
           currentMinsLeft -= currentWO.getMetaData().getWorkLoadMinutes(calendar.getTech());
           currentMinsLeft -= AppConfiguartion.getInstance().getDriveTime();
-          currentWO = getClosestWorkOrder(currentWO, currentIn2, calendar, in2ToWOMap, matrix, currentMinsLeft);
+          currentWO = getClosestWorkOrder(originWO, currentIn2, calendar, in2ToWOMap, matrix, currentMinsLeft);
+//          currentWO = getClosestWorkOrder(currentWO, currentIn2, calendar, in2ToWOMap, matrix, currentMinsLeft);
        }
 
        if (!calendar.scheduleFreeDay(dayToSchedule))
@@ -302,6 +315,10 @@
        return dayToSchedule;
     }
 
+    /**
+     * We used to schedule from farther distance from shop back to shop.  That was not good.
+     * We are going to try and just get the closest work order to the current job.
+     */
     private WO getClosestWorkOrder(WO originWO,
                                    Set<String> currentIn2,
                                    MonthlyCalendar calendar,
@@ -342,15 +359,18 @@
           if (destWO.getMetaData().getItemStatHolderList(calendar.getTech()).get(0).getScheduledStart() != null)
              continue;
 
-          // If distance is greater than 15 miles from shop take closest WO
-          double shopToOrig = matrix.get("0").get(originWO.getIN2());
-          double shopToDest = matrix.get("0").get(destWO.getIN2());
-          if (shopToOrig > 25000)
-             return destWO;
-
-          // If distance is less than 15 miles from shop start working back towards the shop
-          if (shopToDest > shopToOrig)
-             continue;
+          //////////////
+          // This is the logic to try and work way back to shop.  Don't do this anymore just take the next closest work order.
+//          // If distance is greater than 15 miles from shop take closest WO
+//          double shopToOrig = matrix.get("0").get(originWO.getIN2());
+//          double shopToDest = matrix.get("0").get(destWO.getIN2());
+//          if (shopToOrig > 25000)
+//             return destWO;
+//
+//          // If distance is less than 15 miles from shop start working back towards the shop
+//          if (shopToDest > shopToOrig)
+//             continue;
+          //////////////
 
           return destWO;
        }
@@ -556,11 +576,13 @@
        }
     }
 
-    protected Map<String, List<Event>> getConfirmedAndClearUnconfirmed()
+    protected Map<String, List<Event>> getConfirmedAndClearUnconfirmed(String techRebuild)
     {
        Map<String, List<Event>> confirmedEvents = Maps.newHashMap();
        for (String calName : CalendarManager.getInstance().getCalendarNameToID().keySet())
        {
+          if (techRebuild != null && !techRebuild.equals(calName))
+             continue;
           try
           {
              List<Event> removeEvents = Lists.newArrayList();
@@ -574,7 +596,7 @@
              }
 
              // Delete if we are doing an official run
-             if (AppConfiguartion.getInstance().getUpdateTechsInDB())
+             if (techRebuild != null || AppConfiguartion.getInstance().getUpdateTechsInDB())
              {
                 CalendarManager.getInstance().deleteEventList(calName, removeEvents);
                 log.info("Removed [" + removeEvents.size() + "] events from [" + calName + "].");

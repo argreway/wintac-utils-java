@@ -151,6 +151,13 @@
           }
        }
 
+       // Sort closest to farthest
+       for (Map.Entry<String, Map<String, Double>> entry : filteredMatrix.entrySet())
+       {
+          Map<String, Double> sortedMap = MapUtils.sortByClosestDistanceFirstDouble(entry.getValue());
+          filteredMatrix.put(entry.getKey(), sortedMap);
+       }
+
        return filteredMatrix;
     }
 

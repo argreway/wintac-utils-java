@@ -54,7 +54,7 @@
     }
 
     public String buildSchedule(String startStr,
-                                String endStr)
+                                String endStr, String techRebuild)
     {
        if (schedulerBuilder == null)
           schedulerBuilder = new SchedulerBuilder();
@@ -66,7 +66,7 @@
        MutableDateTime end = new MutableDateTime(endUtc);
        end.setHourOfDay(23);
 
-       schedulerBuilder.buildAndInsertAllSchedules(start.toDateTime());
+       schedulerBuilder.buildAndInsertAllSchedules(start.toDateTime(), techRebuild);
        return "Schedule Building Done";
     }
 

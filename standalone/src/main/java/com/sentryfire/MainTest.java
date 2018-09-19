@@ -63,7 +63,7 @@
 
           SchedulerBuilder schedulerBuilder = new SchedulerBuilder();
 //          List<WO> wos = SchedulerBuilder.getWorkOrderList(start.toDateTime(), true);
-          schedulerBuilder.buildAndInsertAllSchedules(start.toDateTime());
+          schedulerBuilder.buildAndInsertAllSchedules(start.toDateTime(), "TG");
 
           DAOFactory.shutdown();
        }
