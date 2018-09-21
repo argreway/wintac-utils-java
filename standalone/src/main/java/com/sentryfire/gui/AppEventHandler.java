@@ -177,7 +177,7 @@
     public void handleDropInflux(ActionEvent e)
     {
        Runnable task = () -> {
-          DAOFactory.getHistoryInfluxClient().dropDataBase();
+          DAOFactory.getInfluxClient().dropDataBase();
        };
        executor.submit(task);
     }
@@ -194,7 +194,10 @@
     @Override
     public void handleDropInfluxHistory(ActionEvent e)
     {
-
+       Runnable task = () -> {
+          DAOFactory.getHistoryInfluxClient().dropDataBase();
+       };
+       executor.submit(task);
     }
 
     @Override
