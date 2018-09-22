@@ -65,7 +65,7 @@
                 continue;
              }
              data = new GeoCodeData(result, result.geometry.location.lat, result.geometry.location.lng,
-                                    wo.getIN2(), addr, wo.getADR1(), wo.getCITY(), wo.getZIP());
+                                    wo.getNAME(), wo.getIN2(), addr, wo.getADR1(), wo.getCITY(), wo.getZIP());
              geoCodeDataMap.put(addr, data);
           }
           resultIn2ToGeo.put(wo.getIN2(), data);
@@ -97,7 +97,7 @@
           }
 
           GeoCodeData data = new GeoCodeData(result, result.geometry.location.lat, result.geometry.location.lng,
-                                             null, null, null, null, null);
+                                             null, null, null, null, null, null);
           geoCodeDataMap.put(tech.getName(), data);
           resultMap.put(tech.getName(), data);
        }

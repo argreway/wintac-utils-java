@@ -18,7 +18,6 @@ function initialize()
 
 function displayMultipleMarkers(addresses)
 {
-    var infoWindow = new google.maps.InfoWindow();
     var bounds = new google.maps.LatLngBounds();
     var map = new google.maps.Map(document.getElementById('map'), {
         zoom: 10,
@@ -28,6 +27,7 @@ function displayMultipleMarkers(addresses)
 
     for (var i = 0; i < addresses.length; i++)
     {
+        var infoWindow = new google.maps.InfoWindow();
         displayMarker(addresses[i], bounds, infoWindow, map);
     }
 
@@ -42,7 +42,7 @@ function displayMarker(address,
                        infoWindow,
                        resultsMap)
 {
-    var markerContent = "Address: " + address.address;
+    var markerContent = "Job: " + address.jobName + ", Address: " + address.fullAddress;
 
     var marker = new google.maps.Marker(
             {
@@ -76,7 +76,6 @@ function routeWaypoints(locations)
     directionsDisplay.setMap(map);
     directionsDisplay.setPanel(document.getElementById('right-panel'));
 
-    var infowindow = new google.maps.InfoWindow();
 
     var marker, i;
     var request = {
@@ -85,6 +84,7 @@ function routeWaypoints(locations)
 
     for (i = 0; i < locations.length; i++)
     {
+        var infowindow = new google.maps.InfoWindow();
         var markerContent = "Stop [" + (i + 1) + "] -> " + " " + locations[i].address;
         console.log(markerContent);
         marker = new google.maps.Marker(
@@ -94,9 +94,8 @@ function routeWaypoints(locations)
                 });
 
         google.maps.event.addListener(marker, 'click', (function (marker,
-                                                                  i) {
+                                                                  markerContent) {
             return function () {
-                var markerContent = "Stop [" + (i + 1) + "] -> " + " " + locations[i].address;
                 infowindow.setContent(markerContent);
                 infowindow.open(map, marker);
             }

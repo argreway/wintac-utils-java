@@ -136,7 +136,6 @@
        catch (IOException e2)
        {
           log.warn("Failed to deserialize: ", e2);
-
        }
        catch (Exception ex)
        {

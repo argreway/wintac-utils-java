@@ -15,18 +15,22 @@
 
  public class GeoCodeData implements Serializable
  {
+    private static final long serialVersionUID = 4283077223807055368L;
+
     GeocodingResult geocodingResult;
     Double lat;
     Double lng;
     String woNumber;
     String fullAddress;
     String street;
+    String jobName;
     String city;
     String zip;
 
     public GeoCodeData(GeocodingResult geocodingResult,
                        Double lat,
                        Double lng,
+                       String jobName,
                        String woNumber,
                        String fullAddress,
                        String street,
@@ -36,6 +40,7 @@
        this.geocodingResult = geocodingResult;
        this.lat = lat;
        this.lng = lng;
+       this.jobName = jobName;
        this.woNumber = woNumber;
        this.fullAddress = fullAddress;
        this.street = street;
@@ -71,6 +76,16 @@
     public void setLng(Double lng)
     {
        this.lng = lng;
+    }
+
+    public String getJobName()
+    {
+       return jobName;
+    }
+
+    public void setJobName(String jobName)
+    {
+       this.jobName = jobName;
     }
 
     public String getWoNumber()
@@ -133,6 +148,7 @@
               ", woNumber='" + woNumber + '\'' +
               ", fullAddress='" + fullAddress + '\'' +
               ", street='" + street + '\'' +
+              ", jobName='" + jobName + '\'' +
               ", city='" + city + '\'' +
               ", zip='" + zip + '\'' +
               '}';
